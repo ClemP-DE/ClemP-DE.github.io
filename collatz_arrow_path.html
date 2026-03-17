@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collatz Sequence Grapher</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #f8f8f8;
+    color: #1a1a2e;
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 20px 32px 14px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: -0.02em;
+  }
+
+  .formula-bar {
+    padding: 10px 32px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .formula {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.82rem;
+  }
+
+  .odd { color: #ff7043; }
+  .even { color: #4fc3f7; }
+  .pipe { color: #333; }
+
+  #plot { flex: 1; min-height: 620px; }
+
+  .controls {
+    padding: 12px 32px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .input-group label {
+    font-size: 0.65rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  input[type=number] {
+    background: white;
+    border: 1px solid #ccc;
+    color: #1a1a2e;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    padding: 6px 10px;
+    width: 80px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type=number]:focus { border-color: #4fc3f7; }
+
+  .btn {
+    padding: 7px 18px;
+    border: 1px solid #bbb;
+    background: transparent;
+    color: #1a1a2e;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .btn:hover { background: #eee; border-color: #999; }
+  .btn.go { background: #1a1a2e; color: white; border-color: #4fc3f7; }
+  .btn.go:hover { background: #2e2e5e; }
+
+  .stats-bar {
+    padding: 8px 32px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    gap: 28px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-label {
+    font-size: 0.55rem;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+
+  .stat-value {
+    font-size: 0.9rem;
+    color: #1a1a2e;
+  }
+
+  .stat-value.peak { color: #ffe066; }
+  .stat-value.steps { color: #a8e6a3; }
+  .stat-value.start { color: #4fc3f7; }
+
+  .sequence-box {
+    padding: 8px 32px;
+    border-bottom: 1px solid #ddd;
+    font-size: 0.7rem;
+    color: #666;
+    line-height: 1.6;
+    max-height: 60px;
+    overflow-y: auto;
+    word-break: break-all;
+  }
+
+  .seq-num.odd-n { color: #ff7043; }
+  .seq-num.even-n { color: #4fc3f7; }
+  .seq-num.one { color: #ffe066; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Collatz Sequence Grapher</h1>
+  <span style="font-size:0.7rem;color:#888;letter-spacing:0.15em;text-transform:uppercase;">The 3n+1 Problem</span>
+</header>
+
+<div class="formula-bar">
+  <div class="formula">
+    <span style="color:#777">f(x) =</span>
+    <span class="odd">3x + 1 &nbsp;if x is odd</span>
+    <span class="pipe">|</span>
+    <span class="even">x / 2 &nbsp;if x is even</span>
+  </div>
+  <div style="font-size:0.65rem;color:#444;letter-spacing:0.08em;">Conjecture: every starting value eventually reaches 1</div>
+</div>
+
+<div class="controls">
+  <div class="input-group">
+    <label>Start x =</label>
+    <input type="number" id="startInput" value="3" min="1" step="1">
+  </div>
+  <button class="btn go" onclick="runCollatz()">Go</button>
+  <button class="btn" onclick="runRandom()">Random</button>
+  <button class="btn" onclick="addOverlay()">+ Overlay</button>
+  <button class="btn" onclick="clearAll()">Clear</button>
+  <span style="font-size:0.65rem;color:#888;margin-left:8px;">Tip: use Overlay to compare multiple sequences</span>
+</div>
+
+<div class="stats-bar" id="statsBar">
+  <div class="stat"><span class="stat-label">Starting Value</span><span class="stat-value start" id="statStart">3</span></div>
+  <div class="stat"><span class="stat-label">Steps to reach 1</span><span class="stat-value steps" id="statSteps">—</span></div>
+  <div class="stat"><span class="stat-label">Peak Value</span><span class="stat-value peak" id="statPeak">—</span></div>
+  <div class="stat"><span class="stat-label">Odd Steps</span><span class="stat-value odd" id="statOdd">—</span></div>
+  <div class="stat"><span class="stat-label">Even Steps</span><span class="stat-value even" id="statEven">—</span></div>
+</div>
+
+<div class="sequence-box" id="seqBox">Enter a starting value and click Go.</div>
+
+<div id="plot2" style="min-height:620px;"></div>
+<div id="pointsList" style="padding: 10px 32px 20px; font-size: 0.72rem; color: #888; font-family: 'Space Mono', monospace; line-height: 1.8; border-top: 1px solid #ddd;"></div>
+
+
+<script>
+  let overlays = [];
+  const palette = ['#4fc3f7','#ff7043','#a8e6a3','#ffe066','#ce93d8','#f48fb1','#80cbc4','#ffcc80'];
+
+  function collatz(n) {
+    const seq = [n];
+    let oddCount = 0, evenCount = 0;
+    while (n !== 1) {
+      if (n % 2 !== 0) { n = 3*n + 1; oddCount++; }
+      else { n = n / 2; evenCount++; }
+      seq.push(n);
+    }
+    return { seq, oddCount, evenCount };
+  }
+
+  function buildFunctionLines(seq) {
+    // Draw y=3x+1 and y=0.5x over the range of sequence values
+    const maxVal = Math.max(...seq);
+    const xs = [];
+    for (let x = 0; x <= maxVal; x += maxVal / 200) xs.push(x);
+
+    const line3n1 = {
+      type: 'scatter', mode: 'lines',
+      x: xs, y: xs.map(x => 3*x + 1),
+      name: 'y = 3x + 1 (odd rule)',
+      line: { color: '#ff7043', width: 1.5, dash: 'dash' },
+      opacity: 0.5,
+      hovertemplate: 'x=%{x:.1f}<br>3x+1=%{y:.1f}<extra>y = 3x+1</extra>'
+    };
+
+    const lineHalf = {
+      type: 'scatter', mode: 'lines',
+      x: xs, y: xs.map(x => 0.5*x),
+      name: 'y = 0.5x (even rule)',
+      line: { color: '#4fc3f7', width: 1.5, dash: 'dash' },
+      opacity: 0.5,
+      hovertemplate: 'x=%{x:.1f}<br>0.5x=%{y:.1f}<extra>y = 0.5x</extra>'
+    };
+
+    return [line3n1, lineHalf];
+  }
+
+  function buildTrace(seq, startVal, color, name) {
+    const traces = [];
+
+    // Draw each segment individually colored by which rule was applied
+    // The rule applied at step i is determined by seq[i] (the value BEFORE the rule)
+    for (let i = 0; i < seq.length - 1; i++) {
+      const isOdd = seq[i] % 2 !== 0;
+      const segColor = isOdd ? 'rgba(255,112,67,0.9)' : 'rgba(79,195,247,0.9)';
+      const ruleName = isOdd ? '3x+1 (odd)' : '0.5x (even)';
+      traces.push({
+        type: 'scatter', mode: 'lines',
+        x: [i, i+1], y: [seq[i], seq[i+1]],
+        showlegend: false,
+        line: { color: segColor, width: 2.5 },
+        hoverinfo: 'skip'
+      });
+    }
+
+    // Markers colored by whether each value is odd or even
+    const markerColors = seq.map(v => v % 2 !== 0 ? 'rgba(255,112,67,0.9)' : 'rgba(79,195,247,0.9)');
+    const steps = seq.map((_, i) => i);
+    traces.push({
+      type: 'scatter', mode: 'markers',
+      x: steps, y: seq,
+      name: name || `x₀=${startVal}`,
+      marker: { color: markerColors, size: 7, line: { color: '#ffffff', width: 1 } },
+      hovertemplate: 'Step %{x}<br>Value: %{y}<br>' + '<extra></extra>'
+    });
+
+    // Add invisible legend entries for the two rules
+    traces.push({
+      type: 'scatter', mode: 'lines',
+      x: [null], y: [null],
+      name: 'odd → 3x+1',
+      line: { color: 'rgba(255,112,67,0.9)', width: 2.5 },
+      showlegend: true
+    });
+    traces.push({
+      type: 'scatter', mode: 'lines',
+      x: [null], y: [null],
+      name: 'even → 0.5x',
+      line: { color: 'rgba(79,195,247,0.9)', width: 2.5 },
+      showlegend: true
+    });
+
+    return traces;
+  }
+
+  const layout = {
+    paper_bgcolor: 'white',
+    plot_bgcolor: 'white',
+    margin: { t: 20, b: 50, l: 60, r: 20 },
+    xaxis: {
+      title: { text: 'Step', font: { color: '#444', size: 12, family: 'Space Mono' } },
+      color: '#444', gridcolor: '#eeeeee',
+      zerolinecolor: '#aaaaaa', tickfont: { color: '#555', size: 10 }
+    },
+    yaxis: {
+      title: { text: 'f(x)', font: { color: '#444', size: 12, family: 'Space Mono' } },
+      color: '#444', gridcolor: '#eeeeee',
+      zerolinecolor: '#aaaaaa', tickfont: { color: '#555', size: 10 }
+    },
+    legend: {
+      x: 0.98, y: 0.98, xanchor: 'right',
+      bgcolor: 'rgba(255,255,255,0.9)',
+      bordercolor: '#dddddd', borderwidth: 1,
+      font: { color: '#444', size: 10, family: 'Space Mono' }
+    },
+    showlegend: true,
+    annotations: []
+  };
+
+  const config = {
+    responsive: true,
+    displayModeBar: true,
+    modeBarButtonsToRemove: ['toImage', 'sendDataToCloud'],
+    displaylogo: false
+  };
+
+  const layout2 = {
+    paper_bgcolor: 'white',
+    plot_bgcolor: 'white',
+    margin: { t: 10, b: 50, l: 60, r: 20 },
+    xaxis: {
+      title: { text: 'Current value x', font: { color: '#444', size: 11, family: 'Space Mono' } },
+      color: '#444', gridcolor: '#eeeeee',
+      zerolinecolor: '#aaaaaa', tickfont: { color: '#555', size: 10 }
+    },
+    yaxis: {
+      title: { text: 'Next value f(x)', font: { color: '#444', size: 11, family: 'Space Mono' } },
+      color: '#444', gridcolor: '#eeeeee',
+      zerolinecolor: '#aaaaaa', tickfont: { color: '#555', size: 10 }
+    },
+    legend: {
+      x: 0.02, y: 0.98,
+      bgcolor: 'rgba(255,255,255,0.9)',
+      bordercolor: '#dddddd', borderwidth: 1,
+      font: { color: '#444', size: 10, family: 'Space Mono' }
+    },
+    showlegend: true
+  };
+
+  Plotly.newPlot('plot2', [], layout2, config);
+
+  function buildRefTraces(seq) {
+    const maxVal = Math.max(...seq);
+    const xs = [];
+    for (let x = 0; x <= maxVal * 1.05; x += maxVal / 300) xs.push(x);
+
+    const line3n1 = {
+      type: 'scatter', mode: 'lines',
+      x: xs, y: xs.map(x => 3*x + 1),
+      name: 'y = 3x+1 (odd rule)',
+      line: { color: 'rgba(255,112,67,0.4)', width: 1.5, dash: 'dash' },
+      hovertemplate: 'x=%{x:.1f}<br>3x+1=%{y:.1f}<extra>y=3x+1</extra>'
+    };
+
+    const lineHalf = {
+      type: 'scatter', mode: 'lines',
+      x: xs, y: xs.map(x => 0.5*x),
+      name: 'y = 0.5x (even rule)',
+      line: { color: 'rgba(79,195,247,0.4)', width: 1.5, dash: 'dash' },
+      hovertemplate: 'x=%{x:.1f}<br>0.5x=%{y:.1f}<extra>y=0.5x</extra>'
+    };
+
+    // Build the chain of points:
+    // Point 0: (seq[0], 0)         <- starting point
+    // Point 1: (seq[0], seq[1])    <- tail=(seq[0],0), head=(seq[0],seq[1])
+    // Point 2: (seq[1], seq[2])    <- tail=(seq[0],seq[1]), head=(seq[1],seq[2])
+    // Point i+1: (seq[i], seq[i+1])
+    const chain = [];
+    chain.push({ x: seq[0], y: 0 });
+    for (let i = 0; i < seq.length - 1; i++) {
+      chain.push({ x: seq[i], y: seq[i+1] });
+    }
+
+    // One annotation per arrow: tail=chain[i], head=chain[i+1]
+    const annotations = [];
+    for (let i = 0; i < chain.length - 1; i++) {
+      const tail = chain[i];
+      const head = chain[i + 1];
+      // Color by the rule that produced head.y from head.x
+      // First arrow: seq[0] is odd/even determines color
+      // Subsequent: seq[i] odd/even
+      const val = (i === 0) ? seq[0] : seq[i];
+      const isOdd = val % 2 !== 0;
+      const arrowColor = isOdd ? 'rgba(255,112,67,0.9)' : 'rgba(79,195,247,0.9)';
+
+      annotations.push({
+        ax: tail.x, ay: tail.y,
+        x: head.x,  y: head.y,
+        xref: 'x2', yref: 'y2',
+        axref: 'x2', ayref: 'y2',
+        showarrow: true,
+        arrowhead: 2,
+        arrowsize: 1.0,
+        arrowwidth: 2,
+        arrowcolor: arrowColor,
+        text: ''
+      });
+    }
+
+    // Dots at each chain point
+    const ptX = chain.map(p => p.x);
+    const ptY = chain.map(p => p.y);
+    const ptColors = chain.map((p, i) => {
+      if (i === 0) return '#ffe066';
+      const val = seq[i-1];
+      return val % 2 !== 0 ? 'rgba(255,112,67,0.9)' : 'rgba(79,195,247,0.9)';
+    });
+
+    const dots = {
+      type: 'scatter', mode: 'markers',
+      x: ptX, y: ptY,
+      name: 'Sequence points',
+      marker: { color: ptColors, size: 7, line: { color: '#ffffff', width: 1 } },
+      hovertemplate: '(%{x}, %{y})<extra></extra>'
+    };
+
+    window._collatzAnnotations = annotations;
+
+    // Set equal axis ranges so proportions match without scaleanchor
+    const axMax = maxVal * 1.05;
+    layout2.xaxis.range = [-5, axMax];
+    layout2.yaxis.range = [-5, axMax];
+
+    return [line3n1, lineHalf, dots];
+  }
+
+  function renderPointsList(seq) {
+    const box = document.getElementById('pointsList');
+    // Build chain same as buildRefTraces
+    const chain = [];
+    chain.push({ x: seq[0], y: 0 });
+    for (let i = 0; i < seq.length - 1; i++) {
+      chain.push({ x: seq[i], y: seq[i+1] });
+    }
+    const items = chain.map((p, i) => {
+      const isOdd = i === 0 ? false : seq[i-1] % 2 !== 0;
+      const color = i === 0 ? '#ffe066' : (isOdd ? '#ff7043' : '#4fc3f7');
+      return `<span style="color:${color}; margin-right: 16px; white-space: nowrap;">(${p.x}, ${p.y})</span>`;
+    });
+    box.innerHTML = '<span style="color:#888;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:6px;">Sequence Points</span>' + items.join('');
+  }
+
+  function runCollatz(startOverride) {
+    const startVal = startOverride || parseInt(document.getElementById('startInput').value);
+    if (!startVal || startVal < 1) return;
+
+    const { seq, oddCount, evenCount } = collatz(startVal);
+    const peak = Math.max(...seq);
+    const color = palette[0];
+
+    overlays = [{ seq, startVal, color }];
+
+    // Update stats
+    document.getElementById('statStart').textContent = startVal;
+    document.getElementById('statSteps').textContent = seq.length - 1;
+    document.getElementById('statPeak').textContent = peak.toLocaleString();
+    document.getElementById('statOdd').textContent = oddCount;
+    document.getElementById('statEven').textContent = evenCount;
+
+    // Sequence display
+    renderSeqBox(seq);
+
+
+    const refTraces = buildRefTraces(seq);
+    const layout2WithAnnotations = Object.assign({}, layout2, { annotations: window._collatzAnnotations || [] });
+    Plotly.react('plot2', refTraces, layout2WithAnnotations, config);
+    renderPointsList(seq);
+  }
+
+  function addOverlay() {
+    const startVal = parseInt(document.getElementById('startInput').value);
+    if (!startVal || startVal < 1) return;
+
+    const { seq } = collatz(startVal);
+    const color = palette[overlays.length % palette.length];
+    overlays.push({ seq, startVal, color });
+
+
+    const refTraces2 = buildRefTraces(overlays[0].seq);
+    const layout2WithAnnotations2 = Object.assign({}, layout2, { annotations: window._collatzAnnotations || [] });
+    Plotly.react('plot2', refTraces2, layout2WithAnnotations2, config);
+    renderPointsList(overlays[0].seq);
+  }
+
+  function clearAll() {
+    overlays = [];
+    document.getElementById('statStart').textContent = '—';
+    document.getElementById('statSteps').textContent = '—';
+    document.getElementById('statPeak').textContent = '—';
+    document.getElementById('statOdd').textContent = '—';
+    document.getElementById('statEven').textContent = '—';
+    document.getElementById('seqBox').innerHTML = 'Enter a starting value and click Go.';
+    Plotly.react('plot2', [], layout2, config);
+    document.getElementById('pointsList').innerHTML = '';
+  }
+
+  function runRandom() {
+    const r = Math.floor(Math.random() * 999) + 2;
+    document.getElementById('startInput').value = r;
+    runCollatz(r);
+  }
+
+  function renderSeqBox(seq) {
+    const box = document.getElementById('seqBox');
+    box.innerHTML = seq.map((v, i) => {
+      let cls = v === 1 ? 'one' : (v % 2 !== 0 ? 'odd-n' : 'even-n');
+      return `<span class="seq-num ${cls}">${v}</span>${i < seq.length-1 ? '<span style="color:#333"> → </span>' : ''}`;
+    }).join('');
+  }
+
+  // Run with default value on load
+  runCollatz(3);
+
+  // Enter key support
+  document.getElementById('startInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') runCollatz();
+  });
+</script>
+</body>
+</html>
