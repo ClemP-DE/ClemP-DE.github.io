@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collatz Steps Histogram</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #ffffff;
+    color: #111111;
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 20px 32px 14px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: -0.02em;
+  }
+  header span { font-size: 0.7rem; color: #111111; letter-spacing: 0.15em; text-transform: uppercase; }
+
+  .controls {
+    padding: 14px 32px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .input-group { display: flex; align-items: center; gap: 10px; }
+  .input-group label { font-size: 0.65rem; color: #111111; text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap; }
+  input[type=number] {
+    background: #f5f5f5;
+    border: 1px solid #ccc;
+    color: #111111;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    padding: 7px 10px;
+    width: 90px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type=number]:focus { border-color: #111111; }
+  .btn {
+    padding: 8px 20px;
+    border: 1px solid #bbb;
+    background: transparent;
+    color: #111111;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .btn:hover { background: #1e1e2e; border-color: #111111; }
+  .btn.go { background: #4fc3f7; color: #111111; border-color: #111111; font-weight: 700; }
+  .btn.go:hover { background: #81d4fa; }
+
+  .stats {
+    padding: 10px 32px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat-label { font-size: 0.55rem; color: #111111; text-transform: uppercase; letter-spacing: 0.12em; }
+  .stat-value { font-size: 0.9rem; }
+
+  .warning {
+    padding: 10px 32px;
+    background: rgba(200,150,0,0.1);
+    border-bottom: 1px solid #e0c000;
+    color: #111111;
+    font-size: 0.7rem;
+    display: none;
+  }
+
+  #plot { flex: 1; min-height: 520px; }
+
+  #status {
+    padding: 60px 32px;
+    color: #111111;
+    font-size: 0.8rem;
+    text-align: center;
+    flex: 1;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Collatz Steps Histogram</h1>
+  <span>Frequency of steps to reach 1</span>
+</header>
+
+<div class="controls">
+  <div class="input-group">
+    <label>From seed</label>
+    <input type="number" id="fromSeed" value="1" min="1" step="1">
+  </div>
+  <div class="input-group">
+    <label>To seed</label>
+    <input type="number" id="toSeed" value="100" min="1" step="1">
+  </div>
+  <div class="input-group">
+    <label>Bin size</label>
+    <input type="number" id="binSize" value="5" min="1" max="50" step="1">
+  </div>
+  <div class="input-group">
+    <label>Y-axis cap</label>
+    <input type="number" id="capValue" value="100" min="1" step="10" style="width:80px;">
+  </div>
+  <button class="btn go" onclick="generate()">Generate</button>
+  <button class="btn" onclick="clearPlot()">Clear</button>
+</div>
+
+<div class="warning" id="warning"></div>
+
+<div class="stats" id="statsBar" style="display:none;">
+  <div class="stat"><span class="stat-label">Seeds</span><span class="stat-value" style="color:#4fc3f7" id="statCount">—</span></div>
+  <div class="stat"><span class="stat-label">Min steps</span><span class="stat-value" style="color:#a8e6a3" id="statMin">—</span></div>
+  <div class="stat"><span class="stat-label">Max steps</span><span class="stat-value" style="color:#ffe066" id="statMax">—</span></div>
+  <div class="stat"><span class="stat-label">Mean steps</span><span class="stat-value" style="color:#4fc3f7" id="statMean">—</span></div>
+  <div class="stat"><span class="stat-label">Median steps</span><span class="stat-value" style="color:#ce93d8" id="statMedian">—</span></div>
+  <div class="stat"><span class="stat-label">Bins exceeding 100</span><span class="stat-value" style="color:#ff7043" id="statOver">—</span></div>
+</div>
+
+<div id="status">Enter a seed range above and click Generate.</div>
+<div id="plot" style="display:none;"></div>
+
+<script>
+  function collatzSteps(n) {
+    let steps = 0;
+    while (n !== 1) {
+      n = n % 2 !== 0 ? 3*n + 1 : n / 2;
+      steps++;
+    }
+    return steps;
+  }
+
+  function generate() {
+    const from = parseInt(document.getElementById('fromSeed').value);
+    const to   = parseInt(document.getElementById('toSeed').value);
+    const binSize = parseInt(document.getElementById('binSize').value);
+    const warn = document.getElementById('warning');
+
+    if (isNaN(from) || isNaN(to) || from < 1 || to < 1) {
+      warn.style.display = 'block';
+      warn.textContent = '⚠ Please enter valid positive integers.';
+      return;
+    }
+    if (from > to) {
+      warn.style.display = 'block';
+      warn.textContent = '⚠ "From" seed must be ≤ "To" seed.';
+      return;
+    }
+    warn.style.display = 'none';
+
+    // Compute all step counts
+    const allSteps = [];
+    for (let i = from; i <= to; i++) allSteps.push(collatzSteps(i));
+
+    const minSteps = Math.min(...allSteps);
+    const maxSteps = Math.max(...allSteps);
+    const meanSteps = (allSteps.reduce((a,b) => a+b, 0) / allSteps.length).toFixed(1);
+    const sorted = [...allSteps].sort((a,b) => a-b);
+    const median = sorted.length % 2 === 0
+      ? ((sorted[sorted.length/2 - 1] + sorted[sorted.length/2]) / 2).toFixed(1)
+      : sorted[Math.floor(sorted.length/2)];
+
+    // Build bins
+    const binStart = Math.floor(minSteps / binSize) * binSize;
+    const binEnd   = Math.ceil((maxSteps + 1) / binSize) * binSize;
+    const bins = {};
+    for (let b = binStart; b < binEnd; b += binSize) bins[b] = 0;
+    allSteps.forEach(s => {
+      const b = Math.floor(s / binSize) * binSize;
+      bins[b]++;
+    });
+
+    const CAP = parseInt(document.getElementById('capValue').value) || 100;
+    const binKeys = Object.keys(bins).map(Number).sort((a,b) => a-b);
+    const xLabels = binKeys.map(b => binSize === 1 ? `${b}` : `${b}-${b+binSize-1}`);
+    const rawCounts = binKeys.map(b => bins[b]);
+    const cappedCounts = rawCounts.map(c => Math.min(c, CAP));
+
+    // Annotations for bins exceeding CAP
+    const annotations = [];
+    let overCount = 0;
+    rawCounts.forEach((c, i) => {
+      if (c > CAP) {
+        overCount++;
+        annotations.push({
+          x: xLabels[i],
+          y: CAP,
+          text: `${c}`,
+          showarrow: true,
+          arrowhead: 2,
+          arrowcolor: '#111111',
+          arrowwidth: 1.5,
+          ax: 0,
+          ay: -28,
+          font: { color: '#111111', size: 10, family: 'Space Mono' },
+          bgcolor: 'rgba(255,255,255,0.95)',
+          bordercolor: '#111111',
+          borderwidth: 1
+        });
+      }
+    });
+
+    // Color bars: gradient from blue (low) to orange (high), yellow for capped
+    const barColors = rawCounts.map((c, i) => {
+      if (c > CAP) return 'rgba(255,224,102,0.85)';
+      const t = cappedCounts[i] / CAP;
+      const r = Math.round(79 + t * 176);
+      const g = Math.round(195 - t * 100);
+      const bl = Math.round(247 - t * 180);
+      return `rgba(${r},${g},${bl},0.85)`;
+    });
+
+    const trace = {
+      type: 'bar',
+      x: xLabels,
+      y: cappedCounts,
+      marker: { color: barColors, line: { color: '#111111', width: 1 } },
+      hovertemplate: rawCounts.map((c, i) =>
+        `Steps: ${xLabels[i]}<br>Count: ${c}${c > CAP ? ' ★ (capped at 100)' : ''}<extra></extra>`
+      ),
+      name: 'Frequency'
+    };
+
+    const layout = {
+      paper_bgcolor: '#ffffff',
+      plot_bgcolor: '#f8f8f8',
+      margin: { t: 30, b: 70, l: 60, r: 20 },
+      xaxis: {
+        title: { text: `Number of Steps to Reach 1  (bin size: ${binSize})`, font: { color: '#000000', size: 13, family: 'Space Mono' } }, titlefont: { color: '#000000' },
+        color: '#111111', gridcolor: '#cccccc',
+        tickfont: { color: '#111111', size: 9 },
+        tickangle: xLabels.length > 20 ? -45 : 0
+      },
+      yaxis: {
+        title: { text: `Frequency (capped at ${CAP})`, font: { color: '#000000', size: 13, family: 'Space Mono' } }, titlefont: { color: '#000000' },
+        color: '#111111', gridcolor: '#cccccc',
+        range: [0, CAP * 1.15],
+        tickfont: { color: '#111111', size: 10 }
+      },
+      annotations: [
+        ...annotations,
+        {
+          x: 0.98, y: 1.04,
+          xref: 'paper', yref: 'paper',
+          text: `Seeds ${from}–${to}`,
+          showarrow: false,
+          font: { color: '#111111', size: 10, family: 'Space Mono' },
+          xanchor: 'right'
+        }
+      ],
+      bargap: 0.08,
+      showlegend: false
+    };
+
+    const config = {
+      responsive: true,
+      displayModeBar: true,
+      modeBarButtonsToRemove: ['toImage', 'sendDataToCloud'],
+      displaylogo: false
+    };
+
+    document.getElementById('status').style.display = 'none';
+    document.getElementById('plot').style.display = 'block';
+    document.getElementById('statsBar').style.display = 'flex';
+
+    // Stats
+    document.getElementById('statCount').textContent = allSteps.length.toLocaleString();
+    document.getElementById('statMin').textContent = minSteps;
+    document.getElementById('statMax').textContent = maxSteps;
+    document.getElementById('statMean').textContent = meanSteps;
+    document.getElementById('statMedian').textContent = median;
+    document.getElementById('statOver').textContent = overCount;
+
+    Plotly.react('plot', [trace], layout, config);
+  }
+
+  function clearPlot() {
+    document.getElementById('plot').style.display = 'none';
+    document.getElementById('statsBar').style.display = 'none';
+    document.getElementById('status').style.display = 'block';
+    document.getElementById('warning').style.display = 'none';
+    Plotly.purge('plot');
+  }
+
+  ['fromSeed','toSeed','binSize','capValue'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') generate();
+    });
+  });
+</script>
+</body>
+</html>
