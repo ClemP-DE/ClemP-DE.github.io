@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Collatz — Sequence Table</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8f8f8; color: #222; padding: 24px; }
+  h1 { font-size: 1.5em; margin-bottom: 4px; color: #1a1a2e; }
+  .subtitle { font-size: 0.9em; color: #666; margin-bottom: 20px; }
+
+  .controls {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    background: white; border: 1px solid #ddd; border-radius: 8px;
+    padding: 16px 20px; margin-bottom: 16px;
+  }
+  .controls label { font-size: 0.9em; color: #444; }
+  .controls input {
+    width: 90px; padding: 6px 10px; border: 1px solid #ccc;
+    border-radius: 5px; font-size: 0.95em;
+  }
+  button {
+    padding: 7px 22px; background: #1a1a2e; color: white;
+    border: none; border-radius: 5px; cursor: pointer; font-size: 0.95em;
+  }
+  button:hover { background: #2e2e5e; }
+
+  .stats-bar {
+    display: flex; gap: 24px; flex-wrap: wrap;
+    background: #1a1a2e; color: white;
+    border-radius: 8px; padding: 12px 20px;
+    margin-bottom: 16px; font-size: 0.88em;
+  }
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat-label { opacity: 0.65; font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.04em; }
+  .stat-value { font-size: 1.05em; font-weight: bold; font-family: 'Courier New', monospace; }
+
+  .legend {
+    display: flex; gap: 20px; font-size: 0.85em; margin-bottom: 12px; align-items: center; flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .chip { display: inline-block; padding: 1px 7px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.85em; font-weight: bold; }
+  .chip.odd  { background: #fde8e8; color: #922b21; border: 1px solid #f5b7b1; }
+  .chip.even { background: #d6eaf8; color: #1a5276; border: 1px solid #aed6f1; }
+  .chip.one  { background: #d5f5e3; color: #1e8449; border: 1px solid #a9dfbf; }
+
+  .table-wrap { overflow-x: auto; background: white; border-radius: 8px; border: 1px solid #ddd; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88em; }
+  thead th {
+    background: #1a1a2e; color: white; padding: 10px 14px;
+    text-align: left; font-weight: 600; white-space: nowrap;
+    cursor: pointer; user-select: none;
+  }
+  thead th:hover { background: #2e2e5e; }
+  thead th.sorted { background: #2e5491; }
+  tbody tr:nth-child(even) { background: #f9f9f9; }
+  tbody tr:hover { background: #eef4ff; }
+  td { padding: 7px 14px; border-bottom: 1px solid #eee; vertical-align: top; }
+  td.seed-col { font-weight: bold; color: #1a1a2e; font-family: 'Courier New', monospace; white-space: nowrap; }
+  td.steps-col { font-family: 'Courier New', monospace; white-space: nowrap; }
+  td.peak-col  { font-family: 'Courier New', monospace; white-space: nowrap; color: #555; }
+  td.seq-col { line-height: 1.8; }
+
+  .note { font-size: 0.82em; color: #888; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<h1>Collatz — Sequence Table</h1>
+<p class="subtitle">Shows the complete Collatz sequence for each seed in a range. Colour-coded: red = odd (3n+1 next), blue = even (n÷2 next), green = 1.</p>
+
+<div class="controls">
+  <label>From seed: <input type="number" id="fromSeed" value="1" min="1"></label>
+  <label>To seed: <input type="number" id="toSeed" value="30" min="1"></label>
+  <button onclick="generate()">Generate</button>
+</div>
+
+<div class="stats-bar" id="statsBar" style="display:none">
+  <div class="stat"><span class="stat-label">Seeds</span><span class="stat-value" id="s-range">—</span></div>
+  <div class="stat"><span class="stat-label">Avg Steps</span><span class="stat-value" id="s-avg">—</span></div>
+  <div class="stat"><span class="stat-label">Max Steps</span><span class="stat-value" id="s-max">—</span></div>
+  <div class="stat"><span class="stat-label">Seed with Max</span><span class="stat-value" id="s-maxseed">—</span></div>
+  <div class="stat"><span class="stat-label">Global Peak</span><span class="stat-value" id="s-peak">—</span></div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><span class="chip odd">n</span> Odd — 3n+1 was applied to get here</div>
+  <div class="legend-item"><span class="chip even">n</span> Even — n÷2 was applied to get here</div>
+  <div class="legend-item"><span class="chip one">1</span> Reached 1</div>
+</div>
+
+<div class="table-wrap">
+  <table id="mainTable">
+    <thead>
+      <tr>
+        <th onclick="sortBy('seed')">Seed ↕</th>
+        <th onclick="sortBy('steps')">Steps ↕</th>
+        <th onclick="sortBy('peak')">Peak Value ↕</th>
+        <th>Sequence</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody">
+      <tr><td colspan="4" style="text-align:center;padding:30px;color:#aaa;font-family:sans-serif">Enter a seed range and click Generate</td></tr>
+    </tbody>
+  </table>
+</div>
+<p class="note" id="tableNote"></p>
+
+<script>
+let tableData = [];
+let sortCol = 'seed';
+let sortAsc = true;
+
+function collatzSequence(n) {
+  const seq = [n];
+  let peak = n;
+  while (n !== 1) {
+    n = n % 2 === 1 ? 3*n+1 : n/2;
+    seq.push(n);
+    if (n > peak) peak = n;
+  }
+  return { seq, steps: seq.length - 1, peak };
+}
+
+function generate() {
+  const from = parseInt(document.getElementById('fromSeed').value);
+  const to   = parseInt(document.getElementById('toSeed').value);
+  if (isNaN(from) || isNaN(to) || from < 1 || to < from) {
+    alert('Please enter a valid range (From ≤ To, both ≥ 1)'); return;
+  }
+  if (to - from > 199) { alert('Please keep the range to 200 seeds or fewer to keep the display manageable.'); return; }
+
+  tableData = [];
+  for (let s = from; s <= to; s++) {
+    const { seq, steps, peak } = collatzSequence(s);
+    tableData.push({ seed: s, seq, steps, peak });
+  }
+
+  // Stats
+  const allSteps = tableData.map(r => r.steps);
+  const allPeaks = tableData.map(r => r.peak);
+  const maxSteps = Math.max(...allSteps);
+  const maxPeak  = Math.max(...allPeaks);
+  const maxSeed  = tableData.find(r => r.steps === maxSteps).seed;
+  const avgSteps = (allSteps.reduce((a,b)=>a+b,0)/allSteps.length).toFixed(1);
+
+  const sb = document.getElementById('statsBar');
+  sb.style.display = 'flex';
+  document.getElementById('s-range').textContent   = from + '–' + to;
+  document.getElementById('s-avg').textContent     = avgSteps;
+  document.getElementById('s-max').textContent     = maxSteps;
+  document.getElementById('s-maxseed').textContent = maxSeed;
+  document.getElementById('s-peak').textContent    = maxPeak.toLocaleString();
+
+  renderTable();
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortAsc = !sortAsc;
+  else { sortCol = col; sortAsc = true; }
+  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+  const cols = ['seed','steps','peak'];
+  const idx = cols.indexOf(col);
+  if (idx >= 0) document.querySelectorAll('thead th')[idx].classList.add('sorted');
+  renderTable();
+}
+
+function chipHTML(val) {
+  if (val === 1) return '<span class="chip one">1</span>';
+  if (val % 2 === 1) return '<span class="chip odd">' + val.toLocaleString() + '</span>';
+  return '<span class="chip even">' + val.toLocaleString() + '</span>';
+}
+
+function renderTable() {
+  const sorted = [...tableData].sort((a,b) => {
+    const k = sortCol === 'seed' ? 'seed' : sortCol === 'steps' ? 'steps' : 'peak';
+    return sortAsc ? a[k] - b[k] : b[k] - a[k];
+  });
+
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = sorted.map(r => {
+    const chips = r.seq.map(chipHTML).join(' ');
+    return `
+      <tr>
+        <td class="seed-col">${r.seed}</td>
+        <td class="steps-col">${r.steps}</td>
+        <td class="peak-col">${r.peak.toLocaleString()}</td>
+        <td class="seq-col">${chips}</td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('tableNote').textContent =
+    sorted.length + ' seeds shown. Click Seed, Steps, or Peak Value column headers to sort.';
+}
+</script>
+</body>
+</html>
