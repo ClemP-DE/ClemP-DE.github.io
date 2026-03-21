@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Collatz — Steps vs Even/Odd Ratio</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.26.0/plotly.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8f8f8; color: #222; padding: 24px; }
+  h1 { font-size: 1.5em; margin-bottom: 4px; color: #1a1a2e; }
+  .subtitle { font-size: 0.9em; color: #666; margin-bottom: 20px; }
+  .controls {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    background: white; border: 1px solid #ddd; border-radius: 8px;
+    padding: 16px 20px; margin-bottom: 16px;
+  }
+  .controls label { font-size: 0.9em; color: #444; }
+  .controls input {
+    width: 100px; padding: 6px 10px; border: 1px solid #ccc;
+    border-radius: 5px; font-size: 0.95em;
+  }
+  button {
+    padding: 7px 22px; background: #1a1a2e; color: white;
+    border: none; border-radius: 5px; cursor: pointer; font-size: 0.95em;
+  }
+  button:hover { background: #2e2e5e; }
+  .stats-bar {
+    display: flex; gap: 24px; flex-wrap: wrap;
+    background: #1a1a2e; color: white;
+    border-radius: 8px; padding: 12px 20px;
+    margin-bottom: 16px; font-size: 0.88em;
+  }
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat-label { opacity: 0.65; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.04em; }
+  .stat-value { font-size: 1.1em; font-weight: bold; font-family: 'Courier New', monospace; }
+  #chart { background: white; border-radius: 8px; border: 1px solid #ddd; height: 520px; }
+</style>
+</head>
+<body>
+
+<h1>Collatz — Steps vs Even÷Odd Ratio</h1>
+<p class="subtitle">Each dot is one seed. X-axis = total steps to reach 1. Y-axis = even÷odd ratio. Hover over any dot to see its seed.</p>
+
+<div class="controls">
+  <label>From seed: <input type="number" id="fromSeed" value="1" min="1"></label>
+  <label>To seed:&nbsp;&nbsp; <input type="number" id="toSeed" value="200" min="1"></label>
+  <button onclick="generate()">Plot</button>
+</div>
+
+<div class="stats-bar" id="statsBar" style="display:none"></div>
+<div id="chart"></div>
+
+<script>
+function collatzCounts(n) {
+  let odd = 0, even = 0, peak = n;
+  while (n !== 1) {
+    if (n % 2 === 1) { n = 3 * n + 1; odd++; }
+    else             { n = n / 2;     even++; }
+    if (n > peak) peak = n;
+  }
+  const total = odd + even;
+  const ratio = odd === 0 ? null : even / odd;
+  return { odd, even, total, peak, ratio };
+}
+
+function generate() {
+  const from = parseInt(document.getElementById('fromSeed').value);
+  const to   = parseInt(document.getElementById('toSeed').value);
+  if (isNaN(from) || isNaN(to) || from < 1 || to < from) {
+    alert('Please enter a valid range.'); return;
+  }
+  if (to - from > 5000) { alert('Keep range to 5000 or fewer.'); return; }
+
+  const seeds = [], ratios = [], steps = [], peaks = [], texts = [];
+
+  for (let s = from; s <= to; s++) {
+    const c = collatzCounts(s);
+    if (c.ratio === null) continue;
+    seeds.push(s);
+    ratios.push(+c.ratio.toFixed(4));
+    steps.push(c.total);
+    peaks.push(c.peak);
+    texts.push(`Seed: ${s}<br>Steps: ${c.total}<br>Odd: ${c.odd}<br>Even: ${c.even}<br>Ratio: ${c.ratio.toFixed(3)}<br>Peak: ${c.peak.toLocaleString()}`);
+  }
+
+  // Colour by steps — low=blue, high=red
+  const maxSteps = Math.max(...steps);
+  const colors = steps.map(s => {
+    const t = s / maxSteps;
+    const r = Math.round(30 + t * 200);
+    const g = Math.round(100 - t * 80);
+    const b = Math.round(200 - t * 170);
+    return `rgb(${r},${g},${b})`;
+  });
+
+  // Stats
+  const avgRatio = ratios.reduce((a,b)=>a+b,0)/ratios.length;
+  const avgSteps = steps.reduce((a,b)=>a+b,0)/steps.length;
+  const maxIdx   = steps.indexOf(maxSteps);
+
+  const sb = document.getElementById('statsBar');
+  sb.style.display = 'flex';
+  sb.innerHTML = `
+    <div class="stat"><span class="stat-label">Seeds</span><span class="stat-value">${from}–${to}</span></div>
+    <div class="stat"><span class="stat-label">Avg Steps</span><span class="stat-value">${avgSteps.toFixed(1)}</span></div>
+    <div class="stat"><span class="stat-label">Max Steps</span><span class="stat-value">${maxSteps} (seed ${seeds[maxIdx]})</span></div>
+    <div class="stat"><span class="stat-label">Avg Ratio</span><span class="stat-value">${avgRatio.toFixed(3)}</span></div>
+    <div class="stat"><span class="stat-label">Ratio Range</span><span class="stat-value">${Math.min(...ratios).toFixed(3)} – ${Math.max(...ratios).toFixed(3)}</span></div>
+  `;
+
+  const trace = {
+    x: steps,
+    y: ratios,
+    mode: 'markers',
+    type: 'scatter',
+    text: texts,
+    hovertemplate: '%{text}<extra></extra>',
+    marker: {
+      color: colors,
+      size: 7,
+      opacity: 0.75,
+      line: { color: 'rgba(0,0,0,0.15)', width: 0.5 }
+    }
+  };
+
+  const shapes = [1.0, 1.5, 2.0, 2.5].map(y => ({
+    type: 'line', x0: 0, x1: maxSteps, y0: y, y1: y,
+    line: { color: '#ccc', width: 1, dash: 'dot' }
+  }));
+
+  const annotations = [1.0, 1.5, 2.0, 2.5].map(y => ({
+    x: maxSteps * 0.97, y, text: `${y}`, showarrow: false,
+    font: { size: 11, color: '#aaa' }, xanchor: 'right'
+  }));
+
+  const layout = {
+    xaxis: {
+      title: { text: 'Total Steps to Reach 1', font: { size: 13 } },
+      gridcolor: '#eee', zeroline: false,
+    },
+    yaxis: {
+      title: { text: 'Even ÷ Odd Ratio', font: { size: 13 } },
+      gridcolor: '#eee', zeroline: false,
+      tickformat: '.2f'
+    },
+    plot_bgcolor: 'white',
+    paper_bgcolor: 'white',
+    height: 520,
+    margin: { t: 30, r: 30, b: 60, l: 70 },
+    shapes,
+    annotations,
+    hovermode: 'closest'
+  };
+
+  Plotly.newPlot('chart', [trace], layout, { responsive: true });
+}
+
+// Auto-generate on load
+window.onload = generate;
+</script>
+</body>
+</html>
