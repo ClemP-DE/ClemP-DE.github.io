@@ -1,2 +1,2 @@
-# yafmen.github.io
+# ClemP-DE.github.io
 Collatz conjecture interactive visualisations
