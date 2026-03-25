@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClemP — Adventures with Number Tables</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink:#1c1916; --ink2:#4a4540; --ink3:#9a948c;
+    --bg:#faf7f2;  --rule:#ddd8ce;
+    --accent:#2a7a52; --accent2:#b5402a;
+  }
+  html { scroll-behavior: smooth; }
+  body { background:var(--bg); color:var(--ink); font-family:'Source Serif 4',Georgia,serif; font-weight:300; line-height:1.7; min-height:100vh; }
+
+  .topbar {
+    padding:14px 5vw; border-bottom:1px solid var(--rule);
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--bg); position:sticky; top:0; z-index:10;
+  }
+  .back-link {
+    display:flex; align-items:center; gap:8px; text-decoration:none;
+    color:var(--ink3); font-size:0.78rem; letter-spacing:0.08em;
+    text-transform:uppercase; transition:color 0.2s;
+  }
+  .back-link:hover { color:var(--accent); }
+  .site-name { font-size:0.78rem; color:var(--ink3); letter-spacing:0.1em; text-transform:uppercase; }
+
+  .hero {
+    padding:56px 5vw 48px; border-bottom:1px solid var(--rule);
+    display:grid; grid-template-columns:1fr auto; gap:40px; align-items:end;
+    animation:fadeDown 0.6s ease both;
+  }
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-12px);}to{opacity:1;transform:translateY(0);} }
+
+  .hero-tag {
+    display:inline-block; font-size:0.6rem; letter-spacing:0.18em;
+    text-transform:uppercase; padding:3px 10px; border-radius:2px;
+    background:#fef9e7; color:#7d6608; margin-bottom:14px;
+  }
+  .hero h1 {
+    font-family:'Playfair Display',serif; font-size:clamp(2rem,4vw,3.2rem);
+    font-weight:700; line-height:1.05; letter-spacing:-0.02em;
+  }
+  .hero h1 em { font-style:italic; color:var(--accent); }
+  .hero .lead { margin-top:16px; font-size:1rem; color:var(--ink2); max-width:56ch; line-height:1.7; }
+  .hero-symbol {
+    font-family:'Playfair Display',serif; font-size:clamp(3rem,6vw,5rem);
+    font-weight:400; font-style:italic; color:var(--rule); line-height:1;
+  }
+
+  .page-body { padding:0 5vw; }
+
+  .section {
+    padding:48px 0; border-bottom:1px solid var(--rule);
+    opacity:0; transform:translateY(20px);
+    transition:opacity 0.5s ease, transform 0.5s ease;
+  }
+  .section.visible { opacity:1; transform:translateY(0); }
+  .section-label { font-size:0.6rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink3); display:block; margin-bottom:20px; }
+  .section h2 { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; color:var(--ink); margin-bottom:16px; }
+  .section p  { font-size:0.95rem; color:var(--ink2); max-width:65ch; margin-bottom:16px; }
+
+  /* mini number table */
+  .number-table-wrap { overflow-x:auto; margin:20px 0; max-width:540px; }
+  .number-table {
+    border-collapse:collapse; font-family:'Playfair Display',serif;
+    font-size:0.9rem; font-style:italic;
+  }
+  .number-table td {
+    width:44px; height:36px; text-align:center;
+    border:1px solid var(--rule); color:var(--ink2);
+  }
+  .number-table td.diag-left  { background:#fef9e7; color:#7d6608; font-weight:700; }
+  .number-table td.diag-right { background:#d6eaf8; color:#1a5276; }
+  .number-table td.vert       { background:#d5f5e3; color:#1e6940; }
+
+  .diff-label {
+    display:inline-block; padding:3px 10px; border-radius:2px;
+    font-size:0.78rem; margin:4px 4px 4px 0; font-style:italic;
+  }
+  .diff-label.d11 { background:#fef9e7; color:#7d6608; }
+  .diff-label.d10 { background:#d5f5e3; color:#1e6940; }
+  .diff-label.d9  { background:#d6eaf8; color:#1a5276; }
+  .diff-label.d1  { background:#f5eef8; color:#6c3483; }
+
+  .paper-card {
+    display:flex; align-items:center; gap:20px;
+    padding:20px 24px; border:1px solid var(--rule); border-radius:4px;
+    background:white; text-decoration:none; color:var(--ink);
+    max-width:560px; transition:all 0.2s; margin-top:8px;
+  }
+  .paper-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,0.07); }
+  .paper-icon { font-size:2rem; flex-shrink:0; }
+  .paper-info .paper-title { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; display:block; margin-bottom:3px; }
+  .paper-info .paper-meta  { font-size:0.75rem; color:var(--ink3); }
+  .paper-status { display:inline-block; font-size:0.6rem; letter-spacing:0.14em; text-transform:uppercase; padding:2px 8px; border-radius:2px; margin-top:6px; background:#fde8e8; color:#922b21; }
+
+  footer { padding:32px 5vw; display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:var(--ink3); flex-wrap:wrap; gap:12px; }
+  footer a { color:var(--ink3); text-decoration:none; }
+  footer a:hover { color:var(--ink); }
+
+  @media (max-width:640px) { .hero{grid-template-columns:1fr;} .hero-symbol{display:none;} }
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a class="back-link" href="index.html">← Mathematical Explorations</a>
+  <span class="site-name">ClemP</span>
+</nav>
+
+<div class="hero">
+  <div>
+    <span class="hero-tag">Number Theory</span>
+    <h1>Adventures with <em>Number Tables</em></h1>
+    <p class="lead">
+      A conversation with a six-year-old, a number line written on a sheet of paper,
+      and a late-night insight about a 10×10 table and its diagonals.
+    </p>
+  </div>
+  <div class="hero-symbol">+11</div>
+</div>
+
+<div class="page-body">
+
+  <!-- THE STORY -->
+  <div class="section" id="story">
+    <span class="section-label">How It Started</span>
+    <h2>A birthday walk and an unimpressed six-year-old</h2>
+    <p>
+      Walking home from a children's film on his birthday, a grandson asked whether
+      his grandfather knew any maths. One thing led to another — a number line on a
+      sheet of paper, the numbers 0 through 9 written out — and a challenge to circle
+      two adjacent numbers.
+    </p>
+    <p>
+      The grandson was unimpressed and went off to play. But staring at the number
+      line alone, a pattern emerged: the pairs of adjacent numbers — 01, 12, 23,
+      34 … 89 — all differ from their neighbours by exactly 11.
+    </p>
+    <p>
+      That night, drifting off to sleep, an image appeared: a 10×10 table of
+      numbers, and those pairs sitting on a diagonal. In the morning the table
+      was drawn out, and there they were.
+    </p>
+  </div>
+
+  <!-- THE TABLE -->
+  <div class="section" id="table">
+    <span class="section-label">The Pattern</span>
+    <h2>The number line, laid out in rows of ten</h2>
+    <p>
+      When the number line is written in rows of ten, four different difference
+      patterns emerge depending on which direction you move through the table:
+    </p>
+    <div style="margin:12px 0 20px;">
+      <span class="diff-label d11">Left diagonal: differ by 11</span>
+      <span class="diff-label d10">Vertical: differ by 10</span>
+      <span class="diff-label d9">Right diagonal: differ by 9</span>
+      <span class="diff-label d1">Horizontal: differ by 1</span>
+    </div>
+    <div class="number-table-wrap">
+      <table class="number-table">
+        <tbody>
+          <tr>
+            <td>0</td><td>1</td><td>2</td><td>3</td><td>4</td>
+            <td>5</td><td>6</td><td>7</td><td>8</td><td>9</td>
+          </tr>
+          <tr>
+            <td>10</td><td>11</td><td class="diag-right">12</td><td>13</td><td>14</td>
+            <td>15</td><td>16</td><td>17</td><td>18</td><td>19</td>
+          </tr>
+          <tr>
+            <td>20</td><td class="diag-left">21</td><td class="vert">22</td><td class="diag-left">23</td><td>24</td>
+            <td>25</td><td>26</td><td>27</td><td>28</td><td>29</td>
+          </tr>
+          <tr>
+            <td>30</td><td>31</td><td class="vert">32</td><td class="diag-left">33</td><td>34</td>
+            <td>35</td><td>36</td><td>37</td><td>38</td><td>39</td>
+          </tr>
+          <tr>
+            <td>40</td><td>41</td><td class="vert">42</td><td>43</td><td class="diag-left">44</td>
+            <td>45</td><td>46</td><td>47</td><td>48</td><td>49</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:0.78rem; color:var(--ink3); margin-top:8px;">
+      Yellow = left-leaning diagonal (differ by 11) · Green = vertical (differ by 10) · Blue = right-leaning diagonal (differ by 9)
+    </p>
+    <p>
+      None of this is deeply surprising once you see why it must be true — the
+      paper gives a simple algebraic proof for each case. But the pattern is
+      genuinely easy to miss until someone points it out, and once seen it
+      opens up further questions about what happens when the row width changes.
+    </p>
+  </div>
+
+  <!-- PAPER -->
+  <div class="section" id="paper">
+    <span class="section-label">The Paper</span>
+    <h2>Adventures with Number Tables</h2>
+    <p>
+      The full paper covers the proofs for each diagonal direction, explores what
+      happens when the row width changes from 10 to other values, and connects
+      the observation back to the number-line pairs that started it all.
+    </p>
+    <a class="paper-card" href="#" target="_blank">
+      <span class="paper-icon">📄</span>
+      <div class="paper-info">
+        <span class="paper-title">Adventures with Number Tables</span>
+        <span class="paper-meta">Clem Padin</span>
+        <span class="paper-status">Coming soon</span>
+      </div>
+    </a>
+  </div>
+
+</div>
+
+<footer>
+  <a href="index.html">← Back to all explorations</a>
+  <a href="https://github.com/ClemP-DE" target="_blank">github.com/ClemP-DE</a>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);} });
+  }, {threshold:0.08});
+  document.querySelectorAll('.section').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

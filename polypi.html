@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClemP — Poly-π</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ink:#1c1916; --ink2:#4a4540; --ink3:#9a948c;
+    --bg:#faf7f2;  --rule:#ddd8ce;
+    --accent:#2a5b8f; --accent2:#b5402a;
+  }
+  html { scroll-behavior: smooth; }
+  body { background:var(--bg); color:var(--ink); font-family:'Source Serif 4',Georgia,serif; font-weight:300; line-height:1.7; min-height:100vh; }
+
+  .topbar {
+    padding:14px 5vw; border-bottom:1px solid var(--rule);
+    display:flex; align-items:center; justify-content:space-between;
+    background:var(--bg); position:sticky; top:0; z-index:10;
+  }
+  .back-link {
+    display:flex; align-items:center; gap:8px;
+    text-decoration:none; color:var(--ink3); font-size:0.78rem;
+    letter-spacing:0.08em; text-transform:uppercase; transition:color 0.2s;
+  }
+  .back-link:hover { color:var(--accent); }
+  .site-name { font-size:0.78rem; color:var(--ink3); letter-spacing:0.1em; text-transform:uppercase; }
+
+  .hero {
+    padding:56px 5vw 48px; border-bottom:1px solid var(--rule);
+    display:grid; grid-template-columns:1fr auto; gap:40px; align-items:end;
+    animation:fadeDown 0.6s ease both;
+  }
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-12px);} to{opacity:1;transform:translateY(0);} }
+
+  .hero-tag {
+    display:inline-block; font-size:0.6rem; letter-spacing:0.18em;
+    text-transform:uppercase; padding:3px 10px; border-radius:2px;
+    background:#d6eaf8; color:#1a5276; margin-bottom:14px;
+  }
+  .hero h1 {
+    font-family:'Playfair Display',serif;
+    font-size:clamp(2rem,4vw,3.2rem);
+    font-weight:700; line-height:1.05; letter-spacing:-0.02em;
+  }
+  .hero h1 em { font-style:italic; color:var(--accent); }
+  .hero .lead { margin-top:16px; font-size:1rem; color:var(--ink2); max-width:56ch; line-height:1.7; }
+  .hero-symbol {
+    font-family:'Playfair Display',serif;
+    font-size:clamp(4rem,8vw,7rem);
+    font-weight:400; font-style:italic;
+    color:var(--rule); line-height:1;
+  }
+
+  .page-body { padding:0 5vw; }
+
+  .section {
+    padding:48px 0; border-bottom:1px solid var(--rule);
+    opacity:0; transform:translateY(20px);
+    transition:opacity 0.5s ease, transform 0.5s ease;
+  }
+  .section.visible { opacity:1; transform:translateY(0); }
+
+  .section-label {
+    font-size:0.6rem; letter-spacing:0.2em; text-transform:uppercase;
+    color:var(--ink3); display:block; margin-bottom:20px;
+  }
+  .section h2 {
+    font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700;
+    color:var(--ink); margin-bottom:16px;
+  }
+  .section p { font-size:0.95rem; color:var(--ink2); max-width:65ch; margin-bottom:16px; }
+
+  /* formula display */
+  .formula-block {
+    background:white; border:1px solid var(--rule); border-radius:4px;
+    padding:24px 28px; margin:20px 0; max-width:480px;
+    font-family:'Playfair Display',serif;
+  }
+  .formula-block .formula-main {
+    font-size:1.4rem; font-style:italic; color:var(--accent);
+    display:block; margin-bottom:8px;
+  }
+  .formula-block .formula-limit {
+    font-size:0.85rem; color:var(--ink3); display:block;
+  }
+
+  /* poly table */
+  .poly-table {
+    border-collapse:collapse; margin:16px 0; font-size:0.88rem;
+    max-width:480px; width:100%;
+  }
+  .poly-table th {
+    background:var(--ink); color:var(--bg);
+    padding:8px 16px; text-align:left; font-weight:400;
+    font-size:0.7rem; letter-spacing:0.1em; text-transform:uppercase;
+  }
+  .poly-table td { padding:8px 16px; border-bottom:1px solid var(--rule); }
+  .poly-table tr:nth-child(even) td { background:white; }
+  .poly-table .val { font-family:'Playfair Display',serif; font-style:italic; color:var(--accent); }
+
+  .paper-card {
+    display:flex; align-items:center; gap:20px;
+    padding:20px 24px; border:1px solid var(--rule); border-radius:4px;
+    background:white; text-decoration:none; color:var(--ink);
+    max-width:560px; transition:all 0.2s; margin-top:8px;
+  }
+  .paper-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,0.07); }
+  .paper-icon { font-size:2rem; flex-shrink:0; }
+  .paper-info .paper-title { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; display:block; margin-bottom:3px; }
+  .paper-info .paper-meta  { font-size:0.75rem; color:var(--ink3); }
+  .paper-status { display:inline-block; font-size:0.6rem; letter-spacing:0.14em; text-transform:uppercase; padding:2px 8px; border-radius:2px; margin-top:6px; }
+  .paper-status.published { background:#d5f5e3; color:#1e6940; }
+
+  footer {
+    padding:32px 5vw; display:flex; justify-content:space-between; align-items:center;
+    font-size:0.75rem; color:var(--ink3); flex-wrap:wrap; gap:12px;
+  }
+  footer a { color:var(--ink3); text-decoration:none; }
+  footer a:hover { color:var(--ink); }
+
+  @media (max-width:640px) { .hero{grid-template-columns:1fr;} .hero-symbol{display:none;} }
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a class="back-link" href="index.html">← Mathematical Explorations</a>
+  <span class="site-name">ClemP</span>
+</nav>
+
+<div class="hero">
+  <div>
+    <span class="hero-tag">Geometry</span>
+    <h1>Poly-<em>π</em></h1>
+    <p class="lead">
+      π is the ratio of a circle's circumference to its diameter — and it is the
+      same for every circle, regardless of size. Does each family of regular polygons
+      have its own analogous constant? It does.
+    </p>
+  </div>
+  <div class="hero-symbol">π<sub style="font-size:0.5em">n</sub></div>
+</div>
+
+<div class="page-body">
+
+  <!-- THE IDEA -->
+  <div class="section" id="idea">
+    <span class="section-label">The Idea</span>
+    <h2>Every regular polygon has its own π</h2>
+    <p>
+      All circles have the same shape — they differ only in size. The same is true
+      of equilateral triangles, squares, regular pentagons. For circles, the ratio
+      of circumference to diameter is always π ≈ 3.14159…
+    </p>
+    <p>
+      By defining a polygon's <em>radius</em> as the distance from its centre to
+      any vertex, and its <em>circumference</em> as its perimeter, a constant
+      π<sub>n</sub> emerges for each regular n-gon: the ratio of perimeter to
+      diameter (twice the radius) is the same for all regular n-gons of the same
+      type.
+    </p>
+    <p>
+      The general formula turns out to be elegantly simple:
+    </p>
+    <div class="formula-block">
+      <span class="formula-main">π<sub>n</sub> = n · sin(180° / n)</span>
+      <span class="formula-limit">As n → ∞,  π<sub>n</sub> → π</span>
+    </div>
+    <p>
+      As the polygon gains more and more sides and approaches a circle, its
+      poly-π value converges to π itself.
+    </p>
+  </div>
+
+  <!-- VALUES -->
+  <div class="section" id="values">
+    <span class="section-label">The Values</span>
+    <h2>Poly-π for the regular polygons</h2>
+    <p>A few values to illustrate the progression toward π:</p>
+    <table class="poly-table">
+      <thead>
+        <tr><th>Shape</th><th>Sides (n)</th><th>π<sub>n</sub></th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Equilateral triangle</td><td>3</td><td class="val">≈ 2.598</td></tr>
+        <tr><td>Square</td><td>4</td><td class="val">≈ 2.828</td></tr>
+        <tr><td>Pentagon</td><td>5</td><td class="val">≈ 2.939</td></tr>
+        <tr><td>Hexagon</td><td>6</td><td class="val">≈ 3.000</td></tr>
+        <tr><td>Octagon</td><td>8</td><td class="val">≈ 3.061</td></tr>
+        <tr><td>Dodecagon</td><td>12</td><td class="val">≈ 3.106</td></tr>
+        <tr><td>Circle</td><td>∞</td><td class="val">= π ≈ 3.14159…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAPER -->
+  <div class="section" id="paper">
+    <span class="section-label">The Paper</span>
+    <h2>Published in Chalkdust Magazine</h2>
+    <p>
+      The full paper — including the derivation of the formula for each polygon
+      and the proof that π<sub>n</sub> converges to π — was published in
+      <em>Chalkdust</em>, the magazine for the mathematically curious.
+    </p>
+    <a class="paper-card" href="https://chalkdustmagazine.com/features/poly-π/" target="_blank">
+      <span class="paper-icon">📄</span>
+      <div class="paper-info">
+        <span class="paper-title">Poly-π</span>
+        <span class="paper-meta">Clem Padin · Chalkdust Magazine</span>
+        <span class="paper-status published">Published in Chalkdust</span>
+      </div>
+    </a>
+  </div>
+
+</div>
+
+<footer>
+  <a href="index.html">← Back to all explorations</a>
+  <a href="https://github.com/ClemP-DE" target="_blank">github.com/ClemP-DE</a>
+</footer>
+
+<script>
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);} });
+  }, { threshold:0.08 });
+  document.querySelectorAll('.section').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

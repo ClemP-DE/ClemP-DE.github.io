@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClemP — Mathematical Explorations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink:     #1c1916;
+    --ink2:    #4a4540;
+    --ink3:    #9a948c;
+    --bg:      #faf7f2;
+    --rule:    #ddd8ce;
+    --accent:  #b5402a;
+    --accent2: #2a5b8f;
+    --accent3: #2a7a52;
+    --warm:    #f0ebe0;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* ── MASTHEAD ── */
+  .masthead {
+    border-bottom: 1px solid var(--rule);
+    padding: 0 5vw;
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .masthead-left {
+    padding: 52px 0 40px;
+    flex: 1;
+    border-right: 1px solid var(--rule);
+    padding-right: 48px;
+  }
+
+  .masthead-left .kicker {
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 14px;
+    display: block;
+  }
+
+  .masthead-left h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: clamp(2.4rem, 5vw, 3.8rem);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+
+  .masthead-left h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+
+  .masthead-left .byline {
+    margin-top: 20px;
+    font-size: 0.88rem;
+    color: var(--ink3);
+    line-height: 1.5;
+    max-width: 420px;
+  }
+
+  .masthead-right {
+    padding: 52px 0 40px 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 220px;
+  }
+
+  .masthead-right .nav-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .toc-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toc-list a {
+    text-decoration: none;
+    color: var(--ink2);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: color 0.2s;
+  }
+
+  .toc-list a:hover { color: var(--accent); }
+
+  .toc-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── DIVIDER ── */
+  .section-rule {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 0 5vw;
+  }
+
+  /* ── PROJECT SECTIONS ── */
+  .project {
+    padding: 64px 5vw;
+    border-bottom: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 48px;
+    align-items: start;
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .project.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .project-meta {
+    position: sticky;
+    top: 32px;
+  }
+
+  .project-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 4rem;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--rule);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .project-tag {
+    display: inline-block;
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 2px;
+    margin-bottom: 16px;
+    font-weight: 400;
+  }
+
+  .tag-conjecture { background: #fde8e8; color: #922b21; }
+  .tag-geometry   { background: #d6eaf8; color: #1a5276; }
+  .tag-arithmetic { background: #d5f5e3; color: #1e6940; }
+  .tag-number     { background: #fef9e7; color: #7d6608; }
+
+  .project-meta h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+
+  .project-meta .subtitle {
+    font-size: 0.82rem;
+    color: var(--ink3);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  /* ── PROJECT BODY ── */
+  .project-body p {
+    font-size: 0.96rem;
+    color: var(--ink2);
+    margin-bottom: 20px;
+    max-width: 62ch;
+  }
+
+  .project-body p:last-of-type { margin-bottom: 28px; }
+
+  /* ── LINK CARDS ── */
+  .link-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    text-decoration: none;
+    color: var(--ink);
+    background: white;
+    font-size: 0.8rem;
+    transition: all 0.18s;
+    white-space: nowrap;
+  }
+
+  .card:hover {
+    border-color: currentColor;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+  }
+
+  .card.primary {
+    background: var(--ink);
+    color: var(--bg);
+    border-color: var(--ink);
+  }
+
+  .card.primary:hover { background: var(--accent); border-color: var(--accent); }
+
+  .card-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .card-label { font-weight: 400; }
+  .card-desc  { font-size: 0.7rem; opacity: 0.6; margin-left: 2px; }
+
+  /* Tool grid for multi-tool projects */
+  .tool-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+    margin-top: 20px;
+  }
+
+  .tool-card {
+    display: block;
+    padding: 12px 14px;
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    text-decoration: none;
+    color: var(--ink);
+    background: white;
+    font-size: 0.78rem;
+    transition: all 0.18s;
+  }
+
+  .tool-card:hover {
+    border-color: var(--accent2);
+    background: #f0f5fb;
+    transform: translateY(-1px);
+  }
+
+  .tool-card .tool-name { font-weight: 400; display: block; margin-bottom: 2px; color: var(--ink); }
+  .tool-card .tool-desc { color: var(--ink3); font-size: 0.72rem; display: block; line-height: 1.4; }
+
+  .tools-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink3);
+    margin-top: 28px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  /* ── COMING SOON ── */
+  .coming-soon {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    color: var(--ink3);
+    border: 1px dashed var(--rule);
+    padding: 6px 14px;
+    border-radius: 3px;
+    margin-top: 8px;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    padding: 40px 5vw;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--ink3);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  footer a { color: var(--ink3); text-decoration: none; }
+  footer a:hover { color: var(--ink); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeSlideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .masthead-left { animation: fadeSlideDown 0.7s ease both; }
+  .masthead-right { animation: fadeSlideDown 0.7s 0.15s ease both; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 700px) {
+    .masthead { flex-direction: column; }
+    .masthead-left { border-right: none; border-bottom: 1px solid var(--rule); padding-right: 0; padding-bottom: 32px; }
+    .masthead-right { padding-left: 0; padding-top: 24px; }
+    .project { grid-template-columns: 1fr; gap: 24px; }
+    .project-meta { position: static; }
+    .project-number { font-size: 2.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── MASTHEAD ── -->
+<header class="masthead">
+  <div class="masthead-left">
+    <span class="kicker">Mathematical Explorations</span>
+    <h1>Curious about<br><em>numbers.</em></h1>
+    <p class="byline">
+      A collection of papers, tools, and investigations by Clem Padin —
+      an amateur with a physics background and a habit of noticing things
+      and following them wherever they lead.
+    </p>
+  </div>
+  <div class="masthead-right">
+    <span class="nav-label">Contents</span>
+    <ul class="toc-list">
+      <li><a href="#collatz"><div class="toc-dot" style="background:#b5402a"></div>The Collatz Conjecture</a></li>
+      <li><a href="#polypi"><div class="toc-dot" style="background:#2a5b8f"></div>Poly-π</a></li>
+      <li><a href="#tables"><div class="toc-dot" style="background:#2a7a52"></div>Adventures with Number Tables</a></li>
+      <li><a href="#scavenger"><div class="toc-dot" style="background:#c4860a"></div>Arithmetic Scavenger Hunt</a></li>
+    </ul>
+  </div>
+</header>
+
+<!-- ── PROJECT 1: COLLATZ ── -->
+<section class="project" id="collatz">
+  <div class="project-meta">
+    <div class="project-number">01</div>
+    <span class="project-tag tag-conjecture">Conjecture</span>
+    <h2><a href="collatz.html" style="text-decoration:none;color:inherit;">The Collatz Conjecture</a></h2>
+    <p class="subtitle">Take any positive integer. If even, halve it. If odd, triple it and add one. Repeat. Will you always reach 1?</p>
+  </div>
+  <div class="project-body">
+    <p>
+      Nobody has proven this. Nobody has disproven it either. The conjecture is
+      simple enough to explain to a child and has resisted every serious mathematical
+      attack for nearly a century. This project explores it not through proof
+      but through visualisation — treating the sequences it generates as a data set
+      and using interactive tools to build intuition about what is actually happening.
+    </p>
+    <p>
+      The paper, submitted to the mathematics magazine <em>Chalkdust</em>, describes
+      five visualisations developed through that exploration: a trajectory diagram,
+      a sequence table, a steps histogram, an odd/even step counter, and a scatter
+      plot of steps versus the even/odd ratio. Each one raised new questions.
+      None of them answered the conjecture.
+    </p>
+    <div class="link-cards">
+      <a class="card primary" href="collatz.html">
+        <span class="card-icon">→</span>
+        <span><span class="card-label">Paper &amp; all seven tools</span></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── PROJECT 2: POLY-PI ── -->
+<section class="project" id="polypi">
+  <div class="project-meta">
+    <div class="project-number">02</div>
+    <span class="project-tag tag-geometry">Geometry</span>
+    <h2><a href="polypi.html" style="text-decoration:none;color:inherit;">Poly-π</a></h2>
+    <p class="subtitle">π is the ratio of circumference to diameter — for a circle. What is the equivalent constant for a regular polygon?</p>
+  </div>
+  <div class="project-body">
+    <p>
+      All circles have the same shape. So do all equilateral triangles, all squares,
+      all regular pentagons. For circles, the ratio of circumference to diameter is
+      always π. This paper asks: does each family of regular polygons have its own
+      analogous constant?
+    </p>
+    <p>
+      The answer is yes — and as the polygon gains more sides and approaches a circle,
+      its constant converges to π itself. Published in
+      <em>Chalkdust Magazine</em>.
+    </p>
+    <div class="link-cards">
+      <a class="card primary" href="polypi.html">
+        <span class="card-icon">→</span>
+        <span><span class="card-label">Read more</span></span>
+      </a>
+      <a class="card" href="https://chalkdustmagazine.com/features/poly-π/" target="_blank">
+        <span class="card-icon">📄</span>
+        <span><span class="card-label">Published in Chalkdust</span></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── PROJECT 3: NUMBER TABLES ── -->
+<section class="project" id="tables">
+  <div class="project-meta">
+    <div class="project-number">03</div>
+    <span class="project-tag tag-number">Number Theory</span>
+    <h2><a href="tables.html" style="text-decoration:none;color:inherit;">Adventures with Number Tables</a></h2>
+    <p class="subtitle">A conversation with a six-year-old, a number line, and a 10×10 table that turned out to be surprisingly interesting.</p>
+  </div>
+  <div class="project-body">
+    <p>
+      On a birthday walk home from a children's movie, a six-year-old grandson
+      asked whether his grandfather knew any maths. The resulting conversation
+      led to a number line on a sheet of paper — and then to a late-night
+      insight about a 10×10 table and its diagonals.
+    </p>
+    <p>
+      Adjacent pairs in the number line always differ by 11. The reason turns
+      out to be simple once you see it — and it opens up a family of related
+      patterns depending on which direction you move through the table.
+    </p>
+    <div class="link-cards">
+      <a class="card primary" href="tables.html">
+        <span class="card-icon">→</span>
+        <span><span class="card-label">Read more</span></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── PROJECT 4: SCAVENGER HUNT ── -->
+<section class="project" id="scavenger">
+  <div class="project-meta">
+    <div class="project-number">04</div>
+    <span class="project-tag tag-arithmetic">Arithmetic</span>
+    <h2><a href="scavenger.html" style="text-decoration:none;color:inherit;">Arithmetic Scavenger Hunt</a></h2>
+    <p class="subtitle">Encode a secret message as arithmetic problems. Solve the sums, decode the letters, reveal the sentence.</p>
+  </div>
+  <div class="project-body">
+    <p>
+      Each letter of the alphabet corresponds to a number — A=1 through Z=26,
+      or reversed. Type in any sentence, choose which arithmetic operations to
+      use, and the tool generates a printable worksheet where each problem's
+      answer decodes to a letter.
+    </p>
+    <p>
+      Designed to make arithmetic practice genuinely engaging — especially for
+      children who like puzzles more than drills.
+    </p>
+    <div class="link-cards">
+      <a class="card primary" href="scavenger.html">
+        <span class="card-icon">→</span>
+        <span><span class="card-label">Read more &amp; open tool</span></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <span>Clem Padin — Mathematical Explorations</span>
+  <a href="https://github.com/ClemP-DE" target="_blank">github.com/ClemP-DE</a>
+</footer>
+
+<script>
+  // Intersection observer for fade-in on scroll
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.project').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>
