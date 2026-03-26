@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Collatz Trajectory Diagram</title>
+<title>Collatz — Trajectory Diagram</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
@@ -159,7 +159,7 @@
 
 <header>
   <h1>Collatz Trajectory Diagram</h1>
-  <span style="font-size:0.7rem;color:#888;letter-spacing:0.15em;text-transform:uppercase;">The Visualising the sequence as a trajectory between two rule lines"</span>
+  <span style="font-size:0.7rem;color:#888;letter-spacing:0.15em;text-transform:uppercase;">The 3n+1 Problem</span>
 </header>
 
 <div class="formula-bar">
@@ -179,9 +179,7 @@
   </div>
   <button class="btn go" onclick="runCollatz()">Go</button>
   <button class="btn" onclick="runRandom()">Random</button>
-  <button class="btn" onclick="addOverlay()">+ Overlay</button>
   <button class="btn" onclick="clearAll()">Clear</button>
-  <span style="font-size:0.65rem;color:#888;margin-left:8px;">Tip: use Overlay to compare multiple sequences</span>
 </div>
 
 <div class="stats-bar" id="statsBar">
@@ -344,16 +342,22 @@
 
   Plotly.newPlot('plot2', [], layout2, config);
 
-  function buildRefTraces(seq) {
-    const maxVal = Math.max(...seq);
+  function buildAllTraces() {
+    if (overlays.length === 0) return { traces: [], annotations: [], axMax: 100 };
+
+    // Find the global max across all sequences for axis scaling
+    const globalMax = Math.max(...overlays.map(o => Math.max(...o.seq)));
+    const axMax = globalMax * 1.05;
+
+    // Reference lines scaled to global max
     const xs = [];
-    for (let x = 0; x <= maxVal * 1.05; x += maxVal / 300) xs.push(x);
+    for (let x = 0; x <= axMax; x += axMax / 300) xs.push(x);
 
     const line3n1 = {
       type: 'scatter', mode: 'lines',
       x: xs, y: xs.map(x => 3*x + 1),
       name: 'y = 3x+1 (odd rule)',
-      line: { color: 'rgba(255,112,67,0.4)', width: 1.5, dash: 'dash' },
+      line: { color: 'rgba(255,112,67,0.3)', width: 1.5, dash: 'dash' },
       hovertemplate: 'x=%{x:.1f}<br>3x+1=%{y:.1f}<extra>y=3x+1</extra>'
     };
 
@@ -361,77 +365,102 @@
       type: 'scatter', mode: 'lines',
       x: xs, y: xs.map(x => 0.5*x),
       name: 'y = 0.5x (even rule)',
-      line: { color: 'rgba(79,195,247,0.4)', width: 1.5, dash: 'dash' },
+      line: { color: 'rgba(79,195,247,0.3)', width: 1.5, dash: 'dash' },
       hovertemplate: 'x=%{x:.1f}<br>0.5x=%{y:.1f}<extra>y=0.5x</extra>'
     };
 
-    // Build the chain of points:
-    // Point 0: (seq[0], 0)         <- starting point
-    // Point 1: (seq[0], seq[1])    <- tail=(seq[0],0), head=(seq[0],seq[1])
-    // Point 2: (seq[1], seq[2])    <- tail=(seq[0],seq[1]), head=(seq[1],seq[2])
-    // Point i+1: (seq[i], seq[i+1])
-    const chain = [];
-    chain.push({ x: seq[0], y: 0 });
-    for (let i = 0; i < seq.length - 1; i++) {
-      chain.push({ x: seq[i], y: seq[i+1] });
-    }
+    const traces = [line3n1, lineHalf];
+    const allAnnotations = [];
 
-    // One annotation per arrow: tail=chain[i], head=chain[i+1]
-    const annotations = [];
-    for (let i = 0; i < chain.length - 1; i++) {
-      const tail = chain[i];
-      const head = chain[i + 1];
-      // Color by the rule that produced head.y from head.x
-      // First arrow: seq[0] is odd/even determines color
-      // Subsequent: seq[i] odd/even
-      const val = (i === 0) ? seq[0] : seq[i];
-      const isOdd = val % 2 !== 0;
-      const arrowColor = isOdd ? 'rgba(255,112,67,0.9)' : 'rgba(79,195,247,0.9)';
+    // Palette for multiple sequences — first is neutral, rest are distinct
+    const seqPalette = [
+      null,           // first sequence uses odd/even coloring
+      '#9b59b6',      // purple
+      '#27ae60',      // green
+      '#f39c12',      // amber
+      '#1abc9c',      // teal
+      '#e91e63',      // pink
+      '#795548',      // brown
+      '#607d8b'       // blue-grey
+    ];
 
-      annotations.push({
-        ax: tail.x, ay: tail.y,
-        x: head.x,  y: head.y,
-        xref: 'x2', yref: 'y2',
-        axref: 'x2', ayref: 'y2',
-        showarrow: true,
-        arrowhead: 2,
-        arrowsize: 1.0,
-        arrowwidth: 2,
-        arrowcolor: arrowColor,
-        text: ''
+    overlays.forEach((o, idx) => {
+      const { seq, startVal } = o;
+      const useOddEven = idx === 0;
+      const seqColor = seqPalette[idx] || seqPalette[seqPalette.length - 1];
+
+      // Build chain
+      const chain = [];
+      chain.push({ x: seq[0], y: 0 });
+      for (let i = 0; i < seq.length - 1; i++) {
+        chain.push({ x: seq[i], y: seq[i+1] });
+      }
+
+      // Arrows
+      for (let i = 0; i < chain.length - 1; i++) {
+        const tail = chain[i];
+        const head = chain[i + 1];
+        const val = (i === 0) ? seq[0] : seq[i];
+        const isOdd = val % 2 !== 0;
+        let arrowColor;
+        if (useOddEven) {
+          arrowColor = isOdd ? 'rgba(255,112,67,0.9)' : 'rgba(79,195,247,0.9)';
+        } else {
+          arrowColor = seqColor + 'cc'; // add some transparency
+        }
+        allAnnotations.push({
+          ax: tail.x, ay: tail.y,
+          x: head.x,  y: head.y,
+          xref: 'x2', yref: 'y2',
+          axref: 'x2', ayref: 'y2',
+          showarrow: true,
+          arrowhead: 2, arrowsize: 1.0, arrowwidth: 2,
+          arrowcolor: arrowColor,
+          text: ''
+        });
+      }
+
+      // Dots
+      const ptX = chain.map(p => p.x);
+      const ptY = chain.map(p => p.y);
+      let ptColors;
+      if (useOddEven) {
+        ptColors = chain.map((p, i) => {
+          if (i === 0) return '#ffe066';
+          const val = seq[i-1];
+          return val % 2 !== 0 ? 'rgba(255,112,67,0.9)' : 'rgba(79,195,247,0.9)';
+        });
+      } else {
+        ptColors = chain.map((_, i) => i === 0 ? '#ffe066' : seqColor);
+      }
+
+      traces.push({
+        type: 'scatter', mode: 'markers',
+        x: ptX, y: ptY,
+        name: `seed ${startVal}`,
+        marker: { color: ptColors, size: 7, line: { color: '#ffffff', width: 1 } },
+        hovertemplate: `seed ${startVal}: (%{x}, %{y})<extra></extra>`
       });
-    }
-
-    // Dots at each chain point
-    const ptX = chain.map(p => p.x);
-    const ptY = chain.map(p => p.y);
-    const ptColors = chain.map((p, i) => {
-      if (i === 0) return '#ffe066';
-      const val = seq[i-1];
-      return val % 2 !== 0 ? 'rgba(255,112,67,0.9)' : 'rgba(79,195,247,0.9)';
     });
 
-    const dots = {
-      type: 'scatter', mode: 'markers',
-      x: ptX, y: ptY,
-      name: 'Sequence points',
-      marker: { color: ptColors, size: 7, line: { color: '#ffffff', width: 1 } },
-      hovertemplate: '(%{x}, %{y})<extra></extra>'
-    };
+    return { traces, annotations: allAnnotations, axMax };
+  }
 
-    window._collatzAnnotations = annotations;
-
-    // Set equal axis ranges so proportions match without scaleanchor
-    const axMax = maxVal * 1.05;
+  function renderAll() {
+    const { traces, annotations, axMax } = buildAllTraces();
     layout2.xaxis.range = [-5, axMax];
     layout2.yaxis.range = [-5, axMax];
+    const layoutWithAnnotations = Object.assign({}, layout2, { annotations });
+    Plotly.react('plot2', traces, layoutWithAnnotations, config);
 
-    return [line3n1, lineHalf, dots];
+    // Update active seeds display
+    const label = overlays.map(o => `seed ${o.startVal}`).join('  +  ');
+    const box = document.getElementById('activeSeeds');
+    if (box) box.textContent = overlays.length > 1 ? `Showing: ${label}` : '';
   }
 
   function renderPointsList(seq) {
     const box = document.getElementById('pointsList');
-    // Build chain same as buildRefTraces
     const chain = [];
     chain.push({ x: seq[0], y: 0 });
     for (let i = 0; i < seq.length - 1; i++) {
@@ -442,7 +471,7 @@
       const color = i === 0 ? '#ffe066' : (isOdd ? '#ff7043' : '#4fc3f7');
       return `<span style="color:${color}; margin-right: 16px; white-space: nowrap;">(${p.x}, ${p.y})</span>`;
     });
-    box.innerHTML = '<span style="color:#888;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:6px;">Sequence Points</span>' + items.join('');
+    box.innerHTML = '<span style="color:#888;font-size:0.6rem;letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:6px;">Sequence Points (first seed)</span>' + items.join('');
   }
 
   function runCollatz(startOverride) {
@@ -451,9 +480,8 @@
 
     const { seq, oddCount, evenCount } = collatz(startVal);
     const peak = Math.max(...seq);
-    const color = palette[0];
 
-    overlays = [{ seq, startVal, color }];
+    overlays = [{ seq, startVal }];
 
     // Update stats
     document.getElementById('statStart').textContent = startVal;
@@ -462,28 +490,26 @@
     document.getElementById('statOdd').textContent = oddCount;
     document.getElementById('statEven').textContent = evenCount;
 
-    // Sequence display
     renderSeqBox(seq);
-
-
-    const refTraces = buildRefTraces(seq);
-    const layout2WithAnnotations = Object.assign({}, layout2, { annotations: window._collatzAnnotations || [] });
-    Plotly.react('plot2', refTraces, layout2WithAnnotations, config);
+    renderAll();
     renderPointsList(seq);
   }
 
   function addOverlay() {
     const startVal = parseInt(document.getElementById('startInput').value);
     if (!startVal || startVal < 1) return;
+    if (overlays.length === 0) { runCollatz(startVal); return; }
+    if (overlays.some(o => o.startVal === startVal)) {
+      alert(`Seed ${startVal} is already displayed.`); return;
+    }
+    if (overlays.length >= 7) {
+      alert('Maximum 7 sequences at once. Click Clear to start over.'); return;
+    }
 
     const { seq } = collatz(startVal);
-    const color = palette[overlays.length % palette.length];
-    overlays.push({ seq, startVal, color });
-
-
-    const refTraces2 = buildRefTraces(overlays[0].seq);
-    const layout2WithAnnotations2 = Object.assign({}, layout2, { annotations: window._collatzAnnotations || [] });
-    Plotly.react('plot2', refTraces2, layout2WithAnnotations2, config);
+    overlays.push({ seq, startVal });
+    renderAll();
+    // Keep points list showing the first seed for reference
     renderPointsList(overlays[0].seq);
   }
 
@@ -495,6 +521,8 @@
     document.getElementById('statOdd').textContent = '—';
     document.getElementById('statEven').textContent = '—';
     document.getElementById('seqBox').innerHTML = 'Enter a starting value and click Go.';
+    const box = document.getElementById('activeSeeds');
+    if (box) box.textContent = '';
     Plotly.react('plot2', [], layout2, config);
     document.getElementById('pointsList').innerHTML = '';
   }
