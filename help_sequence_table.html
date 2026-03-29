@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Help — Sequence Table</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --ink:#1c1916; --ink2:#4a4540; --ink3:#9a948c; --bg:#faf7f2; --rule:#ddd8ce; --accent:#b5402a; --panel:#ffffff; --panel2:#f0ece4; }
+  body { background:var(--bg); color:var(--ink); font-family:'Source Serif 4',Georgia,serif; font-weight:300; line-height:1.7; }
+  .topbar { padding:12px 5vw; border-bottom:1px solid var(--rule); display:flex; align-items:center; justify-content:space-between; background:var(--panel); position:sticky; top:0; z-index:10; }
+  .back-link { display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--ink3); font-family:'DM Mono',monospace; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; transition:color 0.2s; }
+  .back-link:hover { color:var(--accent); }
+  .tool-tag { font-family:'DM Mono',monospace; font-size:0.62rem; color:var(--ink3); letter-spacing:0.12em; text-transform:uppercase; }
+  .hero { padding:40px 5vw 32px; border-bottom:1px solid var(--rule); background:var(--panel); }
+  .tag { display:inline-block; font-family:'DM Mono',monospace; font-size:0.58rem; letter-spacing:0.18em; text-transform:uppercase; padding:3px 10px; border-radius:2px; background:#fde8e8; color:#922b21; margin-bottom:12px; }
+  .hero h1 { font-size:1.8rem; font-weight:400; letter-spacing:-0.02em; color:var(--ink); margin-bottom:8px; }
+  .hero h1 em { font-style:italic; color:var(--accent); }
+  .hero .filename { font-family:'DM Mono',monospace; font-size:0.72rem; color:var(--ink3); margin-top:6px; }
+  .hero .desc { font-size:0.95rem; color:var(--ink2); max-width:60ch; margin-top:14px; }
+  .body { padding:32px 5vw; max-width:780px; }
+  .section { margin-bottom:36px; }
+  .section-label { font-family:'DM Mono',monospace; font-size:0.58rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink3); display:block; margin-bottom:14px; }
+  .section p { font-size:0.92rem; color:var(--ink2); margin-bottom:10px; max-width:65ch; }
+  .ctrl-table { width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:4px; }
+  .ctrl-table thead th { background:#1c1916; color:#fff; padding:8px 14px; text-align:left; font-family:'DM Mono',monospace; font-size:0.62rem; letter-spacing:0.1em; text-transform:uppercase; font-weight:400; }
+  .ctrl-table tbody tr { border-bottom:1px solid var(--rule); }
+  .ctrl-table tbody tr:nth-child(even) { background:var(--panel2); }
+  .ctrl-table td { padding:8px 14px; vertical-align:top; }
+  .ctrl-table td:first-child { font-family:'DM Mono',monospace; font-weight:500; font-size:0.8rem; color:var(--ink); white-space:nowrap; }
+  .ctrl-table td:nth-child(2) { color:var(--ink3); font-size:0.82rem; }
+  .ctrl-table td:nth-child(3) { color:var(--ink2); }
+  .bullets { list-style:none; padding:0; margin:0; }
+  .bullets li { display:flex; gap:10px; font-size:0.92rem; color:var(--ink2); margin-bottom:10px; max-width:65ch; }
+  .bullets li::before { content:'—'; color:var(--ink3); flex-shrink:0; }
+  .tip { background:var(--panel2); border-left:3px solid #c4860a; padding:12px 16px; border-radius:0 4px 4px 0; font-size:0.88rem; color:var(--ink2); margin-top:8px; max-width:65ch; }
+  .tip strong { color:#7d5c08; }
+  .launch { display:inline-flex; align-items:center; gap:10px; padding:10px 20px; background:var(--ink); color:var(--bg); text-decoration:none; border-radius:3px; font-family:'DM Mono',monospace; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; transition:all 0.15s; margin-top:20px; }
+  .launch:hover { background:var(--accent); }
+  footer { padding:24px 5vw; border-top:1px solid var(--rule); font-family:'DM Mono',monospace; font-size:0.68rem; color:var(--ink3); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+  footer a { color:var(--ink3); text-decoration:none; }
+  footer a:hover { color:var(--ink); }
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <a class="back-link" href="collatz.html">← Collatz tools</a>
+  <span class="tool-tag">Help</span>
+</nav>
+
+<div class="hero">
+  <h1>Sequence <em>Table</em></h1>
+  <p class="filename">collatz_sequence_table.html</p>
+  <p class="desc">See the complete colour-coded Collatz sequence for every seed in a range, side by side in a sortable table.</p>
+</div>
+
+<div class="body">
+
+  <div class="section">
+    <span class="section-label">What it does</span>
+    <p>Generates the full Collatz sequence for each seed in a range and displays every value in order, colour-coded by type. Also shows the total step count and the peak (highest) value reached for each seed.</p>
+  </div>
+
+  <div class="section">
+    <span class="section-label">Controls</span>
+    <table class="ctrl-table">
+      <thead><tr><th>Field</th><th>Default / Range</th><th>What it controls</th></tr></thead>
+      <tbody>
+        <tr><td>From seed</td><td>Default: 1</td><td>First seed in the range</td></tr>
+        <tr><td>To seed</td><td>Default: 30, max 200</td><td>Last seed in the range (max range: 200)</td></tr>
+        <tr><td>Generate</td><td>—</td><td>Compute and display the table</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <span class="section-label">Reading the output</span>
+    <ul class="bullets">
+      <li>Each row shows one seed. The Sequence column displays every value from start to 1.</li>
+      <li>Red chips are odd values — the 3n+1 rule was applied to reach the next value. Blue chips are even values — n÷2 was applied. The green chip marks where the sequence reached 1.</li>
+      <li>Sort by Seed, Steps, or Peak Value by clicking the column headers.</li>
+      <li>The summary panel shows average steps, the maximum step count and which seed achieved it, and the largest peak value found across the range.</li>
+    </ul>
+    <div class="tip"><strong>Tip:</strong> Keep the range to 50 seeds or fewer for the best readability — sequences can be very long and wrap across many lines. Notice how different seeds share the same ending tail (e.g. …10 → 5 → 16 → 8 → 4 → 2 → 1).</div>
+  </div>
+
+  <a class="launch" href="https://clemp-de.github.io/collatz_sequence_table.html" target="_blank">Open tool →</a>
+
+</div>
+
+<footer>
+  <a href="collatz.html">← Back to all Collatz tools</a>
+  <span>clemp-de.github.io</span>
+</footer>
+</body>
+</html>
