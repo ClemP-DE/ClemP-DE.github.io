@@ -3,234 +3,320 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ClemP — Adventures with Number Tables</title>
+<title>Adventures with Number Tables — Clem Padin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --ink:#1c1916; --ink2:#4a4540; --ink3:#9a948c;
-    --bg:#faf7f2;  --rule:#ddd8ce;
-    --accent:#2a7a52; --accent2:#b5402a;
+    --bg:#faf7f2; --rule:#ddd8ce;
+    --accent:#2a7a52; --accent2:#2a5b8f;
+    --panel:#ffffff; --panel2:#f0ece4;
   }
   html { scroll-behavior: smooth; }
-  body { background:var(--bg); color:var(--ink); font-family:'Source Serif 4',Georgia,serif; font-weight:300; line-height:1.7; min-height:100vh; }
-
-  .topbar {
-    padding:14px 5vw; border-bottom:1px solid var(--rule);
-    display:flex; align-items:center; justify-content:space-between;
-    background:var(--bg); position:sticky; top:0; z-index:10;
-  }
-  .back-link {
-    display:flex; align-items:center; gap:8px; text-decoration:none;
-    color:var(--ink3); font-size:0.78rem; letter-spacing:0.08em;
-    text-transform:uppercase; transition:color 0.2s;
-  }
+  body { background:var(--bg); color:var(--ink); font-family:'Source Serif 4',Georgia,serif; font-weight:300; line-height:1.8; min-height:100vh; }
+  .topbar { padding:14px 5vw; border-bottom:1px solid var(--rule); display:flex; align-items:center; justify-content:space-between; background:var(--panel); position:sticky; top:0; z-index:10; }
+  .back-link { display:flex; align-items:center; gap:8px; text-decoration:none; color:var(--ink3); font-size:0.78rem; letter-spacing:0.08em; text-transform:uppercase; transition:color 0.2s; }
   .back-link:hover { color:var(--accent); }
   .site-name { font-size:0.78rem; color:var(--ink3); letter-spacing:0.1em; text-transform:uppercase; }
-
-  .hero {
-    padding:56px 5vw 48px; border-bottom:1px solid var(--rule);
-    display:grid; grid-template-columns:1fr auto; gap:40px; align-items:end;
-    animation:fadeDown 0.6s ease both;
-  }
+  .hero { padding:56px 5vw 48px; border-bottom:1px solid var(--rule); background:var(--panel); animation: fadeDown 0.6s ease both; }
   @keyframes fadeDown { from{opacity:0;transform:translateY(-12px);}to{opacity:1;transform:translateY(0);} }
-
-  .hero-tag {
-    display:inline-block; font-size:0.6rem; letter-spacing:0.18em;
-    text-transform:uppercase; padding:3px 10px; border-radius:2px;
-    background:#fef9e7; color:#7d6608; margin-bottom:14px;
-  }
-  .hero h1 {
-    font-family:'Playfair Display',serif; font-size:clamp(2rem,4vw,3.2rem);
-    font-weight:700; line-height:1.05; letter-spacing:-0.02em;
-  }
+  .hero-tag { display:inline-block; font-size:0.6rem; letter-spacing:0.18em; text-transform:uppercase; padding:3px 10px; border-radius:2px; background:#fef9e7; color:#7d6608; margin-bottom:14px; }
+  .hero h1 { font-family:'Playfair Display',serif; font-size:clamp(2rem,4vw,3rem); font-weight:700; line-height:1.1; letter-spacing:-0.02em; color:var(--ink); margin-bottom:8px; }
   .hero h1 em { font-style:italic; color:var(--accent); }
-  .hero .lead { margin-top:16px; font-size:1rem; color:var(--ink2); max-width:56ch; line-height:1.7; }
-  .hero-symbol {
-    font-family:'Playfair Display',serif; font-size:clamp(3rem,6vw,5rem);
-    font-weight:400; font-style:italic; color:var(--rule); line-height:1;
-  }
-
-  .page-body { padding:0 5vw; }
-
-  .section {
-    padding:48px 0; border-bottom:1px solid var(--rule);
-    opacity:0; transform:translateY(20px);
-    transition:opacity 0.5s ease, transform 0.5s ease;
-  }
-  .section.visible { opacity:1; transform:translateY(0); }
-  .section-label { font-size:0.6rem; letter-spacing:0.2em; text-transform:uppercase; color:var(--ink3); display:block; margin-bottom:20px; }
-  .section h2 { font-family:'Playfair Display',serif; font-size:1.5rem; font-weight:700; color:var(--ink); margin-bottom:16px; }
-  .section p  { font-size:0.95rem; color:var(--ink2); max-width:65ch; margin-bottom:16px; }
-
-  /* mini number table */
-  .number-table-wrap { overflow-x:auto; margin:20px 0; max-width:540px; }
-  .number-table {
-    border-collapse:collapse; font-family:'Playfair Display',serif;
-    font-size:0.9rem; font-style:italic;
-  }
-  .number-table td {
-    width:44px; height:36px; text-align:center;
-    border:1px solid var(--rule); color:var(--ink2);
-  }
-  .number-table td.diag-left  { background:#fef9e7; color:#7d6608; font-weight:700; }
-  .number-table td.diag-right { background:#d6eaf8; color:#1a5276; }
-  .number-table td.vert       { background:#d5f5e3; color:#1e6940; }
-
-  .diff-label {
-    display:inline-block; padding:3px 10px; border-radius:2px;
-    font-size:0.78rem; margin:4px 4px 4px 0; font-style:italic;
-  }
-  .diff-label.d11 { background:#fef9e7; color:#7d6608; }
-  .diff-label.d10 { background:#d5f5e3; color:#1e6940; }
-  .diff-label.d9  { background:#d6eaf8; color:#1a5276; }
-  .diff-label.d1  { background:#f5eef8; color:#6c3483; }
-
-  .paper-card {
-    display:flex; align-items:center; gap:20px;
-    padding:20px 24px; border:1px solid var(--rule); border-radius:4px;
-    background:white; text-decoration:none; color:var(--ink);
-    max-width:560px; transition:all 0.2s; margin-top:8px;
-  }
-  .paper-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,0.07); }
-  .paper-icon { font-size:2rem; flex-shrink:0; }
-  .paper-info .paper-title { font-family:'Playfair Display',serif; font-size:1rem; font-weight:700; display:block; margin-bottom:3px; }
-  .paper-info .paper-meta  { font-size:0.75rem; color:var(--ink3); }
-  .paper-status { display:inline-block; font-size:0.6rem; letter-spacing:0.14em; text-transform:uppercase; padding:2px 8px; border-radius:2px; margin-top:6px; background:#fde8e8; color:#922b21; }
-
-  footer { padding:32px 5vw; display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:var(--ink3); flex-wrap:wrap; gap:12px; }
+  .byline { font-size:0.85rem; color:var(--ink3); margin-top:8px; }
+  .sub-note { font-size:0.82rem; color:var(--ink3); font-style:italic; margin-top:6px; }
+  .paper { max-width:720px; margin:0 auto; padding:56px 5vw 80px; }
+  .paper p { font-size:1rem; color:var(--ink2); margin-bottom:1.4em; line-height:1.85; }
+  .paper p:first-of-type::first-letter { font-family:'Playfair Display',serif; font-size:3.2rem; font-weight:700; float:left; line-height:0.8; margin-right:6px; margin-top:6px; color:var(--ink); }
+  .paper h2 { font-family:'Playfair Display',serif; font-size:1.35rem; font-weight:700; color:var(--ink); margin:2.5em 0 0.8em; letter-spacing:-0.01em; }
+  .paper h3 { font-family:'Playfair Display',serif; font-size:1.05rem; font-weight:400; font-style:italic; color:var(--accent2); margin:2em 0 0.6em; }
+  .number-display { text-align:center; font-family:'Playfair Display',serif; font-size:1.4rem; font-style:italic; letter-spacing:0.18em; color:var(--ink); margin:1.8em 0; padding:20px; background:var(--panel); border:1px solid var(--rule); border-radius:4px; }
+  .series-display { text-align:center; font-family:'Playfair Display',serif; font-size:1.1rem; font-style:italic; color:var(--ink2); margin:1.5em 0; letter-spacing:0.1em; }
+  .formula { background:var(--panel); border:1px solid var(--rule); border-left:3px solid var(--accent2); padding:16px 20px; margin:1.5em 0; font-size:0.95rem; color:var(--ink); line-height:1.7; }
+  .formula .result { font-weight:600; color:var(--accent2); }
+  .matrix-wrap { display:flex; align-items:center; justify-content:center; gap:8px; margin:1.5em 0; font-family:'Playfair Display',serif; font-style:italic; font-size:1rem; }
+  .matrix { display:inline-grid; grid-template-columns:1fr 1fr; gap:2px 24px; padding:12px 20px; border-left:2px solid var(--ink2); border-right:2px solid var(--ink2); color:var(--ink); }
+  .matrix span { text-align:center; }
+  .num-table { margin:1.5em auto; border-collapse:collapse; font-family:'Source Serif 4',serif; font-size:0.82rem; }
+  .num-table td { width:34px; height:30px; text-align:center; vertical-align:middle; border:1px solid var(--rule); color:var(--ink2); }
+  .num-table td.diag-left { background:#fef9e7; color:#7d6608; font-weight:600; }
+  .prop-table { width:100%; border-collapse:collapse; margin:1.5em 0; font-size:0.92rem; }
+  .prop-table thead th { background:var(--ink); color:var(--bg); padding:8px 14px; text-align:left; font-weight:400; font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; }
+  .prop-table tbody tr { border-bottom:1px solid var(--rule); }
+  .prop-table tbody tr:nth-child(even) { background:var(--panel2); }
+  .prop-table td { padding:8px 14px; color:var(--ink2); }
+  .prop-table td:first-child { font-style:italic; color:var(--ink); }
+  .movement { background:var(--panel2); border-radius:4px; padding:14px 20px; margin:1.2em 0; font-family:'Playfair Display',serif; font-style:italic; font-size:1rem; color:var(--ink); line-height:1.9; }
+  .paper ul { margin:0.8em 0 1.2em 1.4em; color:var(--ink2); font-size:1rem; line-height:1.8; }
+  .paper ul li { margin-bottom:0.4em; }
+  .aside { background:var(--panel2); border-left:3px solid var(--accent); padding:14px 18px; margin:2em 0; font-size:0.9rem; color:var(--ink2); font-style:italic; }
+  .aside strong { font-style:normal; color:var(--ink); }
+  .section-rule { border:none; border-top:1px solid var(--rule); margin:2.5em 0; }
+  .footnotes { margin-top:3em; padding-top:1.5em; border-top:1px solid var(--rule); font-size:0.82rem; color:var(--ink3); line-height:1.6; }
+  .footnotes p { margin-bottom:0.5em; }
+  .conclusion { margin-top:2.5em; padding:24px 28px; background:var(--panel); border:1px solid var(--rule); border-radius:4px; font-style:italic; color:var(--ink2); }
+  footer { padding:32px 5vw; border-top:1px solid var(--rule); display:flex; justify-content:space-between; align-items:center; font-size:0.75rem; color:var(--ink3); flex-wrap:wrap; gap:12px; }
   footer a { color:var(--ink3); text-decoration:none; }
   footer a:hover { color:var(--ink); }
-
-  @media (max-width:640px) { .hero{grid-template-columns:1fr;} .hero-symbol{display:none;} }
+  sup { font-size:0.7em; vertical-align:super; color:var(--accent2); }
 </style>
 </head>
 <body>
 
 <nav class="topbar">
-  <a class="back-link" href="index.html">← Mathematical Explorations</a>
+  <a class="back-link" href="index.html">&larr; Mathematical Explorations</a>
   <span class="site-name">ClemP</span>
 </nav>
 
 <div class="hero">
-  <div>
-    <span class="hero-tag">Number Theory</span>
-    <h1>Adventures with <em>Number Tables</em></h1>
-    <p class="lead">
-      A conversation with a six-year-old, a number line written on a sheet of paper,
-      and a late-night insight about a 10×10 table and its diagonals.
-    </p>
-  </div>
-  <div class="hero-symbol">+11</div>
+  <span class="hero-tag">Number Theory</span>
+  <h1>Adventures with <em>Number Tables</em></h1>
+  <p class="byline">Clem Padin</p>
+  <p class="sub-note">Submitted to Chalkdust Magazine &mdash; shared here for friends.</p>
 </div>
 
-<div class="page-body">
+<div class="paper">
 
-  <!-- THE STORY -->
-  <div class="section" id="story">
-    <span class="section-label">How It Started</span>
-    <h2>A birthday walk and an unimpressed six-year-old</h2>
-    <p>
-      Walking home from a children's film on his birthday, a grandson asked whether
-      his grandfather knew any maths. One thing led to another — a number line on a
-      sheet of paper, the numbers 0 through 9 written out — and a challenge to circle
-      two adjacent numbers.
-    </p>
-    <p>
-      The grandson was unimpressed and went off to play. But staring at the number
-      line alone, a pattern emerged: the pairs of adjacent numbers — 01, 12, 23,
-      34 … 89 — all differ from their neighbours by exactly 11.
-    </p>
-    <p>
-      That night, drifting off to sleep, an image appeared: a 10×10 table of
-      numbers, and those pairs sitting on a diagonal. In the morning the table
-      was drawn out, and there they were.
-    </p>
+  <p>It was an unseasonably warm January day when my grandson challenged me with a math problem. It was my birthday and we were walking back from watching the children&rsquo;s movie <em>Paw Patrol</em>.<sup>1</sup> &ldquo;Do you know any math,&rdquo; he asked me. &ldquo;Yes,&rdquo; I responded, &ldquo;I know a little.&rdquo; &ldquo;Well, how much is 15 divided by 3?&rdquo; I smiled and said, &ldquo;It&rsquo;s 5.&rdquo; I then decided to challenge the little rascal back. &ldquo;But do you know <em>why</em> it&rsquo;s 5?&rdquo; I asked. &ldquo;Yes,&rdquo; he said confidently. &ldquo;It&rsquo;s because there are 5 groups of 3.&rdquo;</p>
+
+  <p>Hmm. I was surprised that a 6-year-old would even know that. Whether from genetics or excellent teaching (or both), it appeared that he had some facility with math. So I decided to introduce him to some fundamental ideas. When we got home, I wrote out the numbers 0 through 9:</p>
+
+  <div class="number-display">0 &nbsp; 1 &nbsp; 2 &nbsp; 3 &nbsp; 4 &nbsp; 5 &nbsp; 6 &nbsp; 7 &nbsp; 8 &nbsp; 9</div>
+
+  <p>I asked him to circle the numbers 6 &amp; 7 together. &ldquo;That&rsquo;s how old I am today,&rdquo; I said. But he was unimpressed and went off to sword play with his younger brother. To prevent myself from yelling out the universal grandparent warning &mdash; &ldquo;Stop or you&rsquo;ll poke an eye out&rdquo; &mdash; I went back to the number line and noticed something interesting.</p>
+
+  <p>If you write down each pair of adjacent numbers from 0 through 9, you get the following series:</p>
+
+  <div class="series-display">01, 12, 23, 34, 45, 56, 67, 78, 89</div>
+
+  <p>And I noticed that the members of this series all differ from their neighbour by 11. &ldquo;Odd,&rdquo; I thought. &ldquo;I wonder why.&rdquo; Now, everyone has had those moments when you get an insight completely out of the blue &mdash; in Greek mythology, it was believed that these insights were bestowed on you by the Muses. Well, the Muses visited me that night. As I was drifting off to sleep, I saw a 10&times;10 table of numbers and <em>knew</em> that the series above would lay on a diagonal of the table. In the morning, I generated a 10&times;10 table and, sure enough, there they were:</p>
+
+  <div style="overflow-x:auto; text-align:center;">
+  <table class="num-table">
+    <tbody>
+      <tr><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td></tr>
+      <tr><td>10</td><td class="diag-left">11</td><td>12</td><td>13</td><td>14</td><td>15</td><td>16</td><td>17</td><td>18</td><td>19</td></tr>
+      <tr><td>20</td><td>21</td><td class="diag-left">22</td><td>23</td><td>24</td><td>25</td><td>26</td><td>27</td><td>28</td><td>29</td></tr>
+      <tr><td>30</td><td>31</td><td>32</td><td class="diag-left">33</td><td>34</td><td>35</td><td>36</td><td>37</td><td>38</td><td>39</td></tr>
+      <tr><td>40</td><td>41</td><td>42</td><td>43</td><td class="diag-left">44</td><td>45</td><td>46</td><td>47</td><td>48</td><td>49</td></tr>
+      <tr><td>50</td><td>51</td><td>52</td><td>53</td><td>54</td><td class="diag-left">55</td><td>56</td><td>57</td><td>58</td><td>59</td></tr>
+      <tr><td>60</td><td>61</td><td>62</td><td>63</td><td>64</td><td>65</td><td class="diag-left">66</td><td>67</td><td>68</td><td>69</td></tr>
+      <tr><td>70</td><td>71</td><td>72</td><td>73</td><td>74</td><td>75</td><td>76</td><td class="diag-left">77</td><td>78</td><td>79</td></tr>
+      <tr><td>80</td><td>81</td><td>82</td><td>83</td><td>84</td><td>85</td><td>86</td><td>87</td><td class="diag-left">88</td><td>89</td></tr>
+      <tr><td>90</td><td>91</td><td>92</td><td>93</td><td>94</td><td>95</td><td>96</td><td>97</td><td>98</td><td class="diag-left">99</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="text-align:center;font-size:0.8rem;color:var(--ink3);margin-top:8px;">Yellow: the left-leaning diagonal &mdash; elements differ by 11</p>
+
+  <p>In fact, if you examine other sets of numbers that also fall on a diagonal parallel to this one (&ldquo;left-leaning&rdquo; diagonals), the elements also differ by 11. Numbers on a vertical column differ by 10, and numbers on a right-leaning diagonal differ by 9. Numbers in any horizontal row differ by 1 &mdash; obvious, since the table is constructed by breaking the number line into groups of 10. Let&rsquo;s call this a <em>Number Line table</em>.</p>
+
+  <hr class="section-rule">
+
+  <h2>Why elements along the left-leaning diagonal differ by 11</h2>
+
+  <p>Let <em>n</em><sub>0</sub> be a number at location (<em>r</em><sub>0</sub>, <em>c</em><sub>0</sub>). The integer <em>n</em><sub>1</sub> directly below it is <em>n</em><sub>0</sub>&nbsp;+&nbsp;10. The number one step to the right of <em>n</em><sub>1</sub> &mdash; call it <em>n</em><sub>2</sub> &mdash; is <em>n</em><sub>1</sub>&nbsp;+&nbsp;1. Then:</p>
+
+  <div class="formula">
+    D<sub>L</sub> = n<sub>2</sub> &minus; n<sub>0</sub> = (n<sub>1</sub> + 1) &minus; n<sub>0</sub> = ((n<sub>0</sub> + 10) + 1) &minus; n<sub>0</sub> = <span class="result">11</span>
   </div>
 
-  <!-- THE TABLE -->
-  <div class="section" id="table">
-    <span class="section-label">The Pattern</span>
-    <h2>The number line, laid out in rows of ten</h2>
-    <p>
-      When the number line is written in rows of ten, four different difference
-      patterns emerge depending on which direction you move through the table:
-    </p>
-    <div style="margin:12px 0 20px;">
-      <span class="diff-label d11">Left diagonal: differ by 11</span>
-      <span class="diff-label d10">Vertical: differ by 10</span>
-      <span class="diff-label d9">Right diagonal: differ by 9</span>
-      <span class="diff-label d1">Horizontal: differ by 1</span>
-    </div>
-    <div class="number-table-wrap">
-      <table class="number-table">
-        <tbody>
-          <tr>
-            <td>0</td><td>1</td><td>2</td><td>3</td><td>4</td>
-            <td>5</td><td>6</td><td>7</td><td>8</td><td>9</td>
-          </tr>
-          <tr>
-            <td>10</td><td>11</td><td class="diag-right">12</td><td>13</td><td>14</td>
-            <td>15</td><td>16</td><td>17</td><td>18</td><td>19</td>
-          </tr>
-          <tr>
-            <td>20</td><td class="diag-left">21</td><td class="vert">22</td><td class="diag-left">23</td><td>24</td>
-            <td>25</td><td>26</td><td>27</td><td>28</td><td>29</td>
-          </tr>
-          <tr>
-            <td>30</td><td>31</td><td class="vert">32</td><td class="diag-left">33</td><td>34</td>
-            <td>35</td><td>36</td><td>37</td><td>38</td><td>39</td>
-          </tr>
-          <tr>
-            <td>40</td><td>41</td><td class="vert">42</td><td>43</td><td class="diag-left">44</td>
-            <td>45</td><td>46</td><td>47</td><td>48</td><td>49</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <p style="font-size:0.78rem; color:var(--ink3); margin-top:8px;">
-      Yellow = left-leaning diagonal (differ by 11) · Green = vertical (differ by 10) · Blue = right-leaning diagonal (differ by 9)
-    </p>
-    <p>
-      None of this is deeply surprising once you see why it must be true — the
-      paper gives a simple algebraic proof for each case. But the pattern is
-      genuinely easy to miss until someone points it out, and once seen it
-      opens up further questions about what happens when the row width changes.
-    </p>
+  <p><em>Example:</em> choose 62. Then n<sub>0</sub>&nbsp;=&nbsp;62, n<sub>1</sub>&nbsp;=&nbsp;72, n<sub>2</sub>&nbsp;=&nbsp;73. So D<sub>L</sub>&nbsp;=&nbsp;73&nbsp;&minus;&nbsp;62&nbsp;=&nbsp;11.</p>
+
+  <h2>Why elements along the right-leaning diagonal differ by 9</h2>
+
+  <p>The same logic applies, but we move one step to the <em>left</em> of n<sub>1</sub> rather than to the right, so n<sub>2</sub>&nbsp;=&nbsp;n<sub>1</sub>&nbsp;&minus;&nbsp;1:</p>
+
+  <div class="formula">
+    D<sub>R</sub> = n<sub>2</sub> &minus; n<sub>0</sub> = (n<sub>1</sub> &minus; 1) &minus; n<sub>0</sub> = ((n<sub>0</sub> + 10) &minus; 1) &minus; n<sub>0</sub> = <span class="result">9</span>
   </div>
 
-  <!-- PAPER -->
-  <div class="section" id="paper">
-    <span class="section-label">The Paper</span>
-    <h2>Adventures with Number Tables</h2>
-    <p>
-      The full paper covers the proofs for each diagonal direction, explores what
-      happens when the row width changes from 10 to other values, and connects
-      the observation back to the number-line pairs that started it all.
-    </p>
-    <a class="paper-card" href="#" target="_blank">
-      <span class="paper-icon">📄</span>
-      <div class="paper-info">
-        <span class="paper-title">Adventures with Number Tables</span>
-        <span class="paper-meta">Clem Padin</span>
-        <span class="paper-status">Coming soon</span>
-      </div>
-    </a>
+  <p><em>Example:</em> using 62 again: n<sub>0</sub>&nbsp;=&nbsp;62, n<sub>1</sub>&nbsp;=&nbsp;72, n<sub>2</sub>&nbsp;=&nbsp;71. So D<sub>R</sub>&nbsp;=&nbsp;71&nbsp;&minus;&nbsp;62&nbsp;=&nbsp;9.</p>
+
+  <hr class="section-rule">
+
+  <h2>Sub-tables and determinants</h2>
+
+  <p>Any 2&times;2 sub-table in the 10-column Number Line table exhibits the same diagonal and vertical difference properties as the full table. The first sub-table (upper-left) is:</p>
+
+  <div class="matrix-wrap">
+    <div class="matrix">
+      <span>0</span><span>1</span>
+      <span>10</span><span>11</span>
+    </div>
+  </div>
+
+  <p>By inspection, det = (0)(11) &minus; (1)(10) = &minus;10. Is this always the case? Generalising: for a sub-table starting at position (<em>i</em>,&nbsp;<em>j</em>), the four elements are:</p>
+
+  <div class="matrix-wrap">
+    <div class="matrix">
+      <span>10i + j</span><span>10i + j + 1</span>
+      <span>10i + 10 + j</span><span>10i + 10 + j + 1</span>
+    </div>
+  </div>
+
+  <p>Computing the determinant and expanding:</p>
+
+  <div class="formula">
+    det = (10i+j)(10i+10+j+1) &minus; (10i+j+1)(10i+10+j) = <span class="result">&minus;10</span>
+  </div>
+
+  <p>The determinant of <em>any</em> 2&times;2 sub-table in a 10-column Number Line table is &minus;10. The absolute value equals the number of columns. Let&rsquo;s verify with a random sub-table:</p>
+
+  <div class="matrix-wrap">
+    <div class="matrix">
+      <span>82</span><span>83</span>
+      <span>92</span><span>93</span>
+    </div>
+  </div>
+  <p style="text-align:center;font-size:0.88rem;color:var(--ink3);">det = (82)(93) &minus; (83)(92) = 7626 &minus; 7636 = &minus;10 &check;</p>
+
+  <hr class="section-rule">
+
+  <h2>Tables with a different number of columns</h2>
+
+  <p>A calendar is a natural 7-column Number Line table. In a 7-column table, vertical numbers differ by 7, left-leaning diagonals differ by 8, and right-leaning diagonals differ by 6.</p>
+
+  <h3>Left-leaning diagonal: differs by 8</h3>
+
+  <div class="formula">
+    D<sub>L</sub> = ((n<sub>0</sub> + 7) + 1) &minus; n<sub>0</sub> = <span class="result">8</span>
+  </div>
+  <p><em>Example:</em> n<sub>0</sub>&nbsp;=&nbsp;18, n<sub>1</sub>&nbsp;=&nbsp;25, n<sub>2</sub>&nbsp;=&nbsp;26. D<sub>L</sub>&nbsp;=&nbsp;26&nbsp;&minus;&nbsp;18&nbsp;=&nbsp;8.</p>
+
+  <h3>Right-leaning diagonal: differs by 6</h3>
+
+  <div class="formula">
+    D<sub>R</sub> = ((n<sub>0</sub> + 7) &minus; 1) &minus; n<sub>0</sub> = <span class="result">6</span>
+  </div>
+  <p><em>Example:</em> n<sub>0</sub>&nbsp;=&nbsp;18, n<sub>1</sub>&nbsp;=&nbsp;25, n<sub>2</sub>&nbsp;=&nbsp;24. D<sub>R</sub>&nbsp;=&nbsp;24&nbsp;&minus;&nbsp;18&nbsp;=&nbsp;6.</p>
+
+  <h3>The determinant of a 7-column sub-table</h3>
+
+  <p>The first sub-table is:</p>
+
+  <div class="matrix-wrap">
+    <div class="matrix">
+      <span>1</span><span>2</span>
+      <span>8</span><span>9</span>
+    </div>
+  </div>
+
+  <p>det = (1)(9) &minus; (2)(8) = &minus;7. And generalising for any 2&times;2 sub-table in a 7-column table gives det&nbsp;=&nbsp;<strong>&minus;7</strong>. The absolute value again equals the number of columns.</p>
+
+  <hr class="section-rule">
+
+  <h2>General properties of Number Line tables</h2>
+
+  <p>For a Number Line table with <em>n</em><sub>C</sub> columns and <em>n</em><sub>R</sub> rows:</p>
+
+  <table class="prop-table">
+    <thead><tr><th>Property</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Left-leaning diagonal difference</td><td>n<sub>C</sub> + 1</td></tr>
+      <tr><td>Right-leaning diagonal difference</td><td>n<sub>C</sub> &minus; 1</td></tr>
+      <tr><td>Vertical difference</td><td>n<sub>C</sub></td></tr>
+      <tr><td>Horizontal difference</td><td>1</td></tr>
+      <tr><td>Total 2&times;2 sub-tables</td><td>(n<sub>C</sub> &minus; 1) &times; (n<sub>R</sub> &minus; 1)</td></tr>
+      <tr><td>|Determinant| of any 2&times;2 sub-table</td><td>n<sub>C</sub></td></tr>
+    </tbody>
+  </table>
+
+  <p>Number Line tables are ubiquitous in everyday life. A TV remote and a microwave keypad are both 3-column Number Line tables: vertical numbers differ by 3, left diagonal by 4, right diagonal by 2, and the determinant of any 2&times;2 sub-table is &minus;3.</p>
+
+  <hr class="section-rule">
+
+  <h2>A &ldquo;Complete&rdquo; table</h2>
+
+  <p>Let&rsquo;s define a <em>Complete Table</em> as a Number Line table where the absolute value of the determinant of all sub-tables equals the number of columns. For large tables it would be impractical to check every sub-table, so we define a <em>Verification Ratio</em> V&nbsp;=&nbsp;n/N, where <em>n</em> is the number of tested sub-tables and <em>N</em> is the total number possible.</p>
+
+  <p>For a 10&times;10 table there are 9&nbsp;&times;&nbsp;9&nbsp;=&nbsp;81 possible 2&times;2 sub-tables. Testing 40 gives V&nbsp;&asymp;&nbsp;0.49; testing 73 gives V&nbsp;&asymp;&nbsp;0.90. In general: N<sub>st</sub>&nbsp;=&nbsp;(c&nbsp;&minus;&nbsp;1)&nbsp;&times;&nbsp;(r&nbsp;&minus;&nbsp;1).</p>
+
+  <hr class="section-rule">
+
+  <h2>Arithmetic using a Number Line table</h2>
+
+  <p>Number Line tables can be used as simple calculators. To add 23&nbsp;+&nbsp;61 using a 10-column table:</p>
+  <ul>
+    <li>Start at 23.</li>
+    <li>61 = six 10s + one 1. Move down 6 rows &rarr; land on 83.</li>
+    <li>Move right 1 &rarr; land on 84.</li>
+  </ul>
+  <p>So 23 + 61 = 84.</p>
+
+  <p>To subtract using a 7-column table, calculate 43&nbsp;&minus;&nbsp;26:</p>
+  <ul>
+    <li>Start at 43.</li>
+    <li>26 = three 7s (21) + five 1s. Move up 3 rows &rarr; land on 22. Move left 5 &rarr; land on 17.</li>
+  </ul>
+  <p>So 43 &minus; 26 = 17.</p>
+
+  <h2>Movement operators</h2>
+
+  <p>Finding a solution to an arithmetic problem using a Number Line table doesn&rsquo;t require the + or &minus; operators at all. We can replace them with movement operators:</p>
+
+  <table class="prop-table">
+    <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>&darr;</td><td>Move down by rows (add)</td></tr>
+      <tr><td>&rarr;</td><td>Move right along a row (add ones)</td></tr>
+      <tr><td>&uarr;</td><td>Move up by rows (subtract)</td></tr>
+      <tr><td>&larr;</td><td>Move left along a row (subtract ones)</td></tr>
+    </tbody>
+  </table>
+
+  <p>Example: 11 + 37 &minus; 16 on a 10-column table. Decompose: 37&nbsp;=&nbsp;three 10s&nbsp;+&nbsp;seven 1s; 16&nbsp;=&nbsp;one 10&nbsp;+&nbsp;six 1s.</p>
+
+  <div class="movement">
+    11 &darr;3 &rarr;7 &uarr;1 &larr;6 = 32
+    <br><span style="font-size:0.85rem;color:var(--ink3);">Start at 11 &rarr; down 3 rows (41) &rarr; right 7 (48) &rarr; up 1 row (38) &rarr; left 6 (32)</span>
+  </div>
+
+  <p>And for 11 + 18 on a 7-column table: 18 = two 7s + four 1s.</p>
+
+  <div class="movement">
+    11 &darr;2 &rarr;4 = 29
+    <br><span style="font-size:0.85rem;color:var(--ink3);">Start at 11 &rarr; down 2 rows (25) &rarr; right 4 (29)</span>
+  </div>
+
+  <p>Negative numbers work too. For 7 &minus; 32 on a 10-column table extended to negatives: 32 = three 10s + two 1s.</p>
+
+  <div class="movement">
+    7 &uarr;3 &larr;2 = &minus;25
+    <br><span style="font-size:0.85rem;color:var(--ink3);">Start at 7 &rarr; up 3 rows (&minus;23) &rarr; left 2 (&minus;25)</span>
+  </div>
+
+  <hr class="section-rule">
+
+  <h2>Movement operators, cryptography, and a scavenger hunt</h2>
+
+  <div class="aside"><strong>Note:</strong> This section is not directly related to the properties of Number Line tables, but it was inspired by the development of the movement operators above.</div>
+
+  <p>When my son was just learning addition and subtraction &mdash; some 35 years ago &mdash; I wrote a web app to help him. It had a field where I entered a clue as a sentence, like &ldquo;look under your bed.&rdquo; When he looked there, an envelope awaited with another clue, directing him to another location in the house. The final clue led to, of course, chocolate. He did not have the original sentence spelled out &mdash; instead the app converted each letter into a simple arithmetic problem. He would solve the problem and, using a mapping scheme (A=1, B=2, &hellip;), reconstruct the original sentence. As he got older I added multiplication and division. Ultimately, he got too old for it. But now I have grandsons.</p>
+
+  <p>I revived the idea and had Claude rewrite it as a standalone HTML file. There are now three versions. The first recreates the original arithmetic scavenger hunt. The second uses movement operators to guide you through a 10&times;10 grid of letters &mdash; you follow directional arrows to decode the hidden message letter by letter. The third generates arithmetic problems for ordered pairs, quietly exposing children to the Cartesian coordinate system while they practise addition and subtraction.</p>
+
+  <p>If you&rsquo;d like any of these HTML files, <a href="mailto:" style="color:var(--accent2);">get in touch</a> and I&rsquo;ll send them to you.</p>
+
+  <hr class="section-rule">
+
+  <div class="conclusion">
+    Starting with a simple question from my grandson, through a dream, to a new way to do arithmetic, to cryptography &mdash; it was a surprise at times but, overall, a wonderful adventure.
+  </div>
+
+  <div class="footnotes">
+    <p><sup>1</sup> As any self-respecting grandfather is duty-bound to do.</p>
+    <p><sup>2</sup> When I went back to my office after it was safe from Covid, the calendar on my office wall was open to March 2020.</p>
   </div>
 
 </div>
 
 <footer>
-  <a href="index.html">← Back to all explorations</a>
+  <a href="index.html">&larr; Back to all explorations</a>
   <a href="https://github.com/ClemP-DE" target="_blank">github.com/ClemP-DE</a>
 </footer>
 
-<script>
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(e => { if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);} });
-  }, {threshold:0.08});
-  document.querySelectorAll('.section').forEach(el => obs.observe(el));
-</script>
 </body>
 </html>
