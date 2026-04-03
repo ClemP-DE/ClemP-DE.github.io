@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collatz — Animated Trajectory Diagram</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #ffffff; color: #111111; font-family: 'Space Mono', monospace; min-height: 100vh; display: flex; flex-direction: column; }
+  header { padding: 20px 32px 14px; border-bottom: 1px solid #ddd; display: flex; align-items: baseline; gap: 20px; flex-wrap: wrap; }
+  header h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; letter-spacing: -0.02em; }
+  header span { font-size: 0.7rem; color: #666; letter-spacing: 0.15em; text-transform: uppercase; }
+  .controls { padding: 14px 32px; border-bottom: 1px solid #ddd; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+  .input-group { display: flex; align-items: center; gap: 10px; }
+  .input-group label { font-size: 0.65rem; color: #444; text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap; }
+  input[type=number] { background: #f5f5f5; border: 1px solid #ccc; color: #111; font-family: 'Space Mono', monospace; font-size: 0.85rem; padding: 7px 10px; width: 90px; outline: none; transition: border-color 0.2s; }
+  input[type=number]:focus { border-color: #111; }
+  input[type=range] { width: 100px; }
+  .btn { padding: 8px 20px; border: 1px solid #bbb; background: transparent; color: #111; font-family: 'Space Mono', monospace; font-size: 0.72rem; letter-spacing: 0.08em; cursor: pointer; text-transform: uppercase; transition: all 0.2s; }
+  .btn:hover { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+  .btn.go { background: #4fc3f7; color: #111; border-color: #111; font-weight: 700; }
+  .btn.go:hover { background: #81d4fa; }
+  .stats { padding: 10px 32px; border-bottom: 1px solid #ddd; display: flex; gap: 28px; flex-wrap: wrap; align-items: center; }
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat-label { font-size: 0.55rem; color: #666; text-transform: uppercase; letter-spacing: 0.12em; }
+  .stat-value { font-size: 0.9rem; font-weight: 700; }
+  .canvas-wrap { flex: 1; padding: 20px 32px; display: flex; flex-direction: column; }
+  .step-counter { font-size: 0.7rem; color: #888; text-align: right; margin-bottom: 6px; letter-spacing: 0.08em; }
+  canvas { width: 100%; border: 1px solid #eee; display: block; }
+  .legend { display: flex; gap: 24px; margin-top: 12px; font-size: 0.7rem; color: #666; }
+  .leg { display: flex; align-items: center; gap: 8px; }
+  .leg-line { width: 20px; height: 2px; }
+  .speed-label { font-size: 0.7rem; color: #666; min-width: 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Collatz — Animated Trajectory Diagram</h1>
+  <span>The 3n+1 Problem</span>
+  <button class="btn" style="margin-left:auto" onclick="window.open('help_trajectory_diagram.html','_blank')">Help</button>
+</header>
+
+<div class="controls">
+  <div class="input-group">
+    <label>Seed</label>
+    <input type="number" id="seedIn" value="27" min="1">
+  </div>
+  <button class="btn go" onclick="startNew()">Go</button>
+  <button class="btn" id="playBtn" onclick="togglePlay()">Pause</button>
+  <button class="btn" onclick="stepOnce()">Step</button>
+  <button class="btn" onclick="reset()">Reset</button>
+  <div class="input-group">
+    <label>Speed</label>
+    <input type="range" id="speedIn" min="1" max="10" value="5" step="1" oninput="document.getElementById('speedLabel').textContent=this.value">
+    <span class="speed-label" id="speedLabel">5</span>
+  </div>
+</div>
+
+<div class="stats" id="statsBar">
+  <div class="stat"><span class="stat-label">Seed</span><span class="stat-value" id="iSeed" style="color:#4fc3f7">—</span></div>
+  <div class="stat"><span class="stat-label">Total steps</span><span class="stat-value" id="iTotal" style="color:#a8e6a3">—</span></div>
+  <div class="stat"><span class="stat-label">Peak value</span><span class="stat-value" id="iPeak" style="color:#ffe066">—</span></div>
+  <div class="stat"><span class="stat-label">Odd steps</span><span class="stat-value" id="iOdd" style="color:#e57373">—</span></div>
+  <div class="stat"><span class="stat-label">Even steps</span><span class="stat-value" id="iEven" style="color:#64b5f6">—</span></div>
+</div>
+
+<div class="canvas-wrap">
+  <div class="step-counter" id="stepCounter">Enter a seed and click Go</div>
+  <canvas id="cvs"></canvas>
+  <div class="legend">
+    <div class="leg"><div class="leg-line" style="background:#e57373"></div> Odd step (3x+1)</div>
+    <div class="leg"><div class="leg-line" style="background:#64b5f6"></div> Even step (x÷2)</div>
+    <div class="leg"><div class="leg-line" style="background:#e57373;opacity:0.4"></div> y = 3x+1</div>
+    <div class="leg"><div class="leg-line" style="background:#64b5f6;opacity:0.4"></div> y = x/2</div>
+    <div class="leg"><div style="width:10px;height:10px;border-radius:50%;background:#4caf50"></div> Reached 1</div>
+  </div>
+</div>
+
+<script>
+const cvs = document.getElementById('cvs');
+const ctx = cvs.getContext('2d');
+let seq = [], arrows = [], currentStep = 0, playing = false, animId = null, lastTime = 0;
+
+function collatz(n) {
+  const s = [n];
+  while (n !== 1) { n = n % 2 === 1 ? 3*n+1 : n/2; s.push(n); }
+  return s;
+}
+
+function buildChain(seq) {
+  const chain = [{ x: seq[0], y: 0 }];
+  for (let i = 0; i < seq.length - 1; i++) {
+    chain.push({ x: seq[i], y: seq[i+1] });
+  }
+  return chain;
+}
+
+function buildArrows(seq) {
+  const chain = buildChain(seq);
+  const arr = [];
+  for (let i = 0; i < chain.length - 1; i++) {
+    const isOdd = i === 0 ? false : seq[i-1] % 2 !== 0;
+    arr.push({ x1: chain[i].x, y1: chain[i].y, x2: chain[i+1].x, y2: chain[i+1].y, isOdd });
+  }
+  return arr;
+}
+
+function setup(seed) {
+  seq = collatz(seed);
+  arrows = buildArrows(seq);
+  currentStep = 0;
+  const peak = Math.max(...seq);
+  const odd = seq.slice(0,-1).filter(v => v%2===1).length;
+  const even = seq.length - 1 - odd;
+  document.getElementById('iSeed').textContent = seed;
+  document.getElementById('iTotal').textContent = seq.length - 1;
+  document.getElementById('iPeak').textContent = peak.toLocaleString();
+  document.getElementById('iOdd').textContent = odd;
+  document.getElementById('iEven').textContent = even;
+  resize(); drawFrame();
+}
+
+function resize() {
+  const W = cvs.parentElement.clientWidth;
+  const H = Math.max(380, Math.min(560, W * 0.65));
+  cvs.width = W; cvs.height = H;
+}
+
+function toCanvas(x, y, pad, W, H, maxV) {
+  return [pad + (x/maxV)*(W-2*pad), H - pad - (y/maxV)*(H-2*pad)];
+}
+
+function arrowHead(x1, y1, x2, y2, color) {
+  const dx = x2-x1, dy = y2-y1, len = Math.sqrt(dx*dx+dy*dy);
+  if (len < 1) return;
+  const ux = dx/len, uy = dy/len, hw = 7, hl = 12;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2-hl*ux+hw*uy, y2-hl*uy-hw*ux);
+  ctx.lineTo(x2-hl*ux-hw*uy, y2-hl*uy+hw*ux);
+  ctx.closePath(); ctx.fill();
+}
+
+function drawFrame() {
+  if (!seq.length) return;
+  const W = cvs.width, H = cvs.height, pad = 56;
+  const allVals = arrows.reduce((a,ar) => a.concat([ar.x1,ar.y1,ar.x2,ar.y2]), []);
+  const maxV = Math.max(...allVals) * 1.1;
+  ctx.clearRect(0, 0, W, H);
+
+  // grid
+  ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 0.5;
+  const ticks = 5;
+  ctx.fillStyle = '#888'; ctx.font = '10px Space Mono, monospace';
+  for (let i = 0; i <= ticks; i++) {
+    const v = Math.round((maxV/ticks)*i);
+    const [cx] = toCanvas(v, 0, pad, W, H, maxV);
+    const [,cy] = toCanvas(0, v, pad, W, H, maxV);
+    ctx.beginPath(); ctx.moveTo(cx, pad); ctx.lineTo(cx, H-pad); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad, cy); ctx.lineTo(W-pad, cy); ctx.stroke();
+    ctx.textAlign = 'center'; ctx.fillText(v.toLocaleString(), cx, H-pad+16);
+    ctx.textAlign = 'right'; ctx.fillText(v.toLocaleString(), pad-8, cy+4);
+  }
+
+  // axes
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, H-pad); ctx.lineTo(W-pad, H-pad); ctx.stroke();
+
+  // y = 3x+1 line (odd rule) — draw over visible range
+  const oddXMax = (maxV - 1) / 3;
+  const [ol0x, ol0y] = toCanvas(0, 1, pad, W, H, maxV);
+  const [ol1x, ol1y] = toCanvas(Math.min(oddXMax, maxV), Math.min(3*Math.min(oddXMax,maxV)+1, maxV), pad, W, H, maxV);
+  ctx.strokeStyle = 'rgba(229,115,115,0.35)'; ctx.lineWidth = 1.2; ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(ol0x, ol0y); ctx.lineTo(ol1x, ol1y); ctx.stroke();
+
+  // y = x/2 line (even rule)
+  const [el0x, el0y] = toCanvas(0, 0, pad, W, H, maxV);
+  const [el1x, el1y] = toCanvas(maxV, maxV/2, pad, W, H, maxV);
+  ctx.strokeStyle = 'rgba(100,181,246,0.35)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(el0x, el0y); ctx.lineTo(el1x, el1y); ctx.stroke();
+
+  // line labels
+  ctx.font = '10px Space Mono, monospace';
+  ctx.fillStyle = 'rgba(229,115,115,0.7)'; ctx.textAlign = 'left';
+  ctx.fillText('y = 3x+1', ol1x - 60, ol1y + 14);
+  ctx.fillStyle = 'rgba(100,181,246,0.7)';
+  ctx.fillText('y = x/2', el1x - 52, el1y - 6);
+
+  // axis labels
+  ctx.fillStyle = '#666'; ctx.font = '11px Space Mono, monospace';
+  ctx.textAlign = 'center'; ctx.fillText('xᵢ', W/2, H-8);
+  ctx.save(); ctx.translate(14, H/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText('xᵢ₊₁', 0, 0); ctx.restore();
+
+  // arrows
+  for (let i = 0; i < currentStep && i < arrows.length; i++) {
+    const a = arrows[i];
+    const color = a.isOdd ? '#e57373' : '#64b5f6';
+    const [xa, ya] = toCanvas(a.x1, a.y1, pad, W, H, maxV);
+    const [xb, yb] = toCanvas(a.x2, a.y2, pad, W, H, maxV);
+
+    ctx.strokeStyle = color; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(xa, ya); ctx.lineTo(xb, yb); ctx.stroke();
+    arrowHead(xa, ya, xb, yb, color);
+
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(xa, ya, 3, 0, Math.PI*2); ctx.fill();
+  }
+
+  // current end dot
+  if (currentStep > 0 && currentStep <= arrows.length) {
+    const last = arrows[currentStep-1];
+    const [fx, fy] = toCanvas(last.x2, last.y2, pad, W, H, maxV);
+    ctx.fillStyle = currentStep === arrows.length ? '#4caf50' : (last.isOdd ? '#e57373' : '#64b5f6');
+    ctx.beginPath(); ctx.arc(fx, fy, 5, 0, Math.PI*2); ctx.fill();
+  }
+
+  document.getElementById('stepCounter').textContent =
+    currentStep === 0 ? 'Press Play or Step to begin' :
+    currentStep >= arrows.length ? `Complete — ${arrows.length} steps to reach 1` :
+    `Step ${currentStep} of ${arrows.length}`;
+}
+
+function getInterval() { return Math.round(1200 / parseInt(document.getElementById('speedIn').value)); }
+
+function animate(ts) {
+  if (!playing) return;
+  if (ts - lastTime >= getInterval()) {
+    lastTime = ts;
+    if (currentStep < arrows.length) { currentStep++; drawFrame(); }
+    else { playing = false; document.getElementById('playBtn').textContent = 'Play'; return; }
+  }
+  animId = requestAnimationFrame(animate);
+}
+
+function togglePlay() {
+  if (currentStep >= arrows.length) currentStep = 0;
+  playing = !playing;
+  document.getElementById('playBtn').textContent = playing ? 'Pause' : 'Play';
+  if (playing) { lastTime = 0; animId = requestAnimationFrame(animate); }
+  else cancelAnimationFrame(animId);
+}
+
+function stepOnce() {
+  playing = false; cancelAnimationFrame(animId);
+  document.getElementById('playBtn').textContent = 'Play';
+  if (currentStep < arrows.length) { currentStep++; drawFrame(); }
+}
+
+function reset() {
+  playing = false; cancelAnimationFrame(animId);
+  document.getElementById('playBtn').textContent = 'Play';
+  currentStep = 0; drawFrame();
+}
+
+function startNew() {
+  cancelAnimationFrame(animId);
+  const seed = Math.max(1, parseInt(document.getElementById('seedIn').value) || 27);
+  setup(seed);
+  playing = true;
+  document.getElementById('playBtn').textContent = 'Pause';
+  lastTime = 0; animId = requestAnimationFrame(animate);
+}
+
+document.getElementById('seedIn').addEventListener('keydown', e => { if (e.key==='Enter') startNew(); });
+window.addEventListener('resize', () => { resize(); drawFrame(); });
+
+setup(27);
+playing = true;
+lastTime = 0;
+animId = requestAnimationFrame(animate);
+</script>
+</body>
+</html>
