@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Cryptography Encoder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .input-section {
+            margin-bottom: 30px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        textarea {
+            min-height: 80px;
+            font-family: monospace;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        table {
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+        td {
+            border: 1px solid #333;
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .header-cell {
+            background-color: #ddd;
+            font-weight: bold;
+        }
+        .output-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .encoded-message {
+            background: white;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin-top: 10px;
+        }
+        .letter-path {
+            margin: 10px 0;
+            padding: 10px;
+            background: #e8f5e9;
+            border-left: 3px solid #4CAF50;
+        }
+        .controls {
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+        }
+        .control-group {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Table Cryptography Encoder</h1>
+        
+        <div class="input-section">
+            <button onclick="generateNewTable()">Generate New Random Table</button>
+            <div class="table-container" id="tableContainer"></div>
+        </div>
+
+        <div class="input-section">
+            <div class="controls">
+                <div class="control-group">
+                    <label for="messageInput">Message to Encode:</label>
+                    <input type="text" id="messageInput" placeholder="Enter your message (e.g., HELLO)">
+                </div>
+                <div class="control-group">
+                    <label for="stepsInput">Steps per Letter:</label>
+                    <input type="number" id="stepsInput" value="5" min="2" max="20">
+                </div>
+                <div class="control-group">
+                    <button onclick="encodeMessage()">Encode Message</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let letterTable = [];
+        let letterPositions = {};
+
+        // Generate a random table with letters A-Z
+        function generateNewTable() {
+            // Create array with 26 letters and 74 empty cells
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+            const cells = [...letters, ...Array(74).fill('')];
+            
+            // Shuffle
+            for (let i = cells.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [cells[i], cells[j]] = [cells[j], cells[i]];
+            }
+            
+            // Create 10x10 table
+            letterTable = [];
+            letterPositions = {};
+            for (let i = 0; i < 10; i++) {
+                letterTable[i] = cells.slice(i * 10, (i + 1) * 10);
+                for (let j = 0; j < 10; j++) {
+                    if (letterTable[i][j]) {
+                        // Row numbering: top row is 10, bottom row is 1
+                        letterPositions[letterTable[i][j]] = {row: 10 - i, col: j + 1};
+                    }
+                }
+            }
+            
+            displayTable();
+        }
+
+        // Display the table
+        function displayTable() {
+            let html = '<table>';
+            
+            // Data rows (reverse the row numbering so 1 is at bottom)
+            for (let i = 0; i < 10; i++) {
+                html += `<tr><td class="header-cell">${10 - i}</td>`;
+                for (let j = 0; j < 10; j++) {
+                    html += `<td>${letterTable[i][j]}</td>`;
+                }
+                html += '</tr>';
+            }
+            
+            // Footer row with column numbers
+            html += '<tr><td class="header-cell"></td>';
+            for (let i = 1; i <= 10; i++) {
+                html += `<td class="header-cell">${i}</td>`;
+            }
+            html += '</tr>';
+            
+            html += '</table>';
+            document.getElementById('tableContainer').innerHTML = html;
+        }
+
+        // Generate random path from (1,1) to target position
+        // Note: Row 1 is at bottom, Row 10 is at top
+        // ↑ increases row number (moves up), ↓ decreases row number (moves down)
+        function generatePath(targetRow, targetCol, totalSteps) {
+            // Special case: if target is at (1,1), just generate a loop that returns to start
+            if (targetRow === 1 && targetCol === 1) {
+                let path = [];
+                let currentRow = 1, currentCol = 1;
+                
+                // Generate pairs of moves that cancel out
+                for (let i = 0; i < totalSteps / 2; i++) {
+                    const direction = Math.random() < 0.5 ? 'vertical' : 'horizontal';
+                    if (direction === 'vertical' && currentRow < 10) {
+                        path.push('↑', '↓');
+                    } else if (currentCol < 10) {
+                        path.push('→', '←');
+                    }
+                }
+                
+                // Compress and return
+                let compressed = [];
+                let i = 0;
+                while (i < path.length) {
+                    let currentMove = path[i];
+                    let count = 1;
+                    while (i + count < path.length && path[i + count] === currentMove) {
+                        count++;
+                    }
+                    compressed.push(`${count}${currentMove}`);
+                    i += count;
+                }
+                return compressed.join(' ');
+            }
+            
+            // Direct moves needed from (1,1) at bottom-left
+            const upNeeded = targetRow - 1;  // How many rows up from row 1
+            const rightNeeded = targetCol - 1;
+            const directSteps = upNeeded + rightNeeded;
+            
+            if (totalSteps < directSteps) {
+                totalSteps = directSteps; // Ensure we have enough steps
+            }
+            
+            // Extra steps to add (must be even to cancel out)
+            let extraSteps = totalSteps - directSteps;
+            if (extraSteps % 2 !== 0) extraSteps++; // Make it even
+            
+            // Build path by simulating moves to stay in bounds
+            let path = [];
+            let currentRow = 1, currentCol = 1;
+            
+            // Track how many net moves we still need
+            let upRemaining = upNeeded;
+            let rightRemaining = rightNeeded;
+            let extraRemaining = extraSteps;
+            
+            while (upRemaining > 0 || rightRemaining > 0 || extraRemaining > 0) {
+                let possibleMoves = [];
+                
+                // Can we move up?
+                if (currentRow < 10) {
+                    if (upRemaining > 0) possibleMoves.push({move: '↑', net: true});
+                    if (extraRemaining > 0) possibleMoves.push({move: '↑', net: false});
+                }
+                
+                // Can we move down?
+                if (currentRow > 1 && extraRemaining > 0) {
+                    possibleMoves.push({move: '↓', net: false});
+                }
+                
+                // Can we move right?
+                if (currentCol < 10) {
+                    if (rightRemaining > 0) possibleMoves.push({move: '→', net: true});
+                    if (extraRemaining > 0) possibleMoves.push({move: '→', net: false});
+                }
+                
+                // Can we move left?
+                if (currentCol > 1 && extraRemaining > 0) {
+                    possibleMoves.push({move: '←', net: false});
+                }
+                
+                if (possibleMoves.length === 0) break;
+                
+                // Pick a random move
+                const chosen = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+                path.push(chosen.move);
+                
+                // Update position
+                if (chosen.move === '↑') currentRow++;
+                else if (chosen.move === '↓') currentRow--;
+                else if (chosen.move === '→') currentCol++;
+                else if (chosen.move === '←') currentCol--;
+                
+                // Update remaining counts
+                if (chosen.net) {
+                    if (chosen.move === '↑') upRemaining--;
+                    else if (chosen.move === '→') rightRemaining--;
+                } else {
+                    extraRemaining--;
+                    // For extra moves, we need to add a compensating move later
+                    // Track what we need to compensate
+                }
+            }
+            
+            // Ensure we end at the target (add any remaining direct moves)
+            while (currentRow < targetRow) {
+                path.push('↑');
+                currentRow++;
+            }
+            while (currentCol < targetCol) {
+                path.push('→');
+                currentCol++;
+            }
+            
+            // Compress consecutive moves into number + arrow format
+            let compressed = [];
+            let i = 0;
+            while (i < path.length) {
+                let currentMove = path[i];
+                let count = 1;
+                while (i + count < path.length && path[i + count] === currentMove) {
+                    count++;
+                }
+                compressed.push(`${count}${currentMove}`);
+                i += count;
+            }
+            
+            return compressed.join(' ');
+        }
+
+        // Encode the message
+        function encodeMessage() {
+            const message = document.getElementById('messageInput').value.toUpperCase();
+            const steps = parseInt(document.getElementById('stepsInput').value);
+            
+            if (!message) {
+                alert('Please enter a message');
+                return;
+            }
+            
+            let encodedPaths = [];
+            
+            for (let char of message) {
+                if (char === ' ') {
+                    encodedPaths.push('||'); // Word separator
+                    continue;
+                }
+                
+                if (!letterPositions[char]) {
+                    alert(`Letter ${char} not found in table`);
+                    continue;
+                }
+                
+                const pos = letterPositions[char];
+                const path = generatePath(pos.row, pos.col, steps);
+                encodedPaths.push(path);
+            }
+            
+            // Generate decode page in new window
+            generateDecodePage(encodedPaths.join(' | '));
+        }
+
+        // Generate a new page with just the table and encoded message
+        function generateDecodePage(encodedMessage) {
+            const decodeWindow = window.open('', '_blank');
+            
+            let tableHTML = '<table style="border-collapse: collapse; margin: 20px auto;">';
+            
+            // Data rows (reverse numbering so 1 is at bottom)
+            for (let i = 0; i < 10; i++) {
+                tableHTML += `<tr><td style="border: 1px solid #333; width: 40px; height: 40px; text-align: center; background-color: #ddd; font-weight: bold;">${10 - i}</td>`;
+                for (let j = 0; j < 10; j++) {
+                    tableHTML += `<td style="border: 1px solid #333; width: 40px; height: 40px; text-align: center; font-weight: bold; font-size: 16px;">${letterTable[i][j]}</td>`;
+                }
+                tableHTML += '</tr>';
+            }
+            
+            // Footer row with column numbers
+            tableHTML += '<tr><td style="border: 1px solid #333; width: 40px; height: 40px; text-align: center; background-color: #ddd; font-weight: bold;"></td>';
+            for (let i = 1; i <= 10; i++) {
+                tableHTML += `<td style="border: 1px solid #333; width: 40px; height: 40px; text-align: center; background-color: #ddd; font-weight: bold;">${i}</td>`;
+            }
+            tableHTML += '</tr>';
+            
+            tableHTML += '</table>';
+            
+                // Build answer squares — one per letter in the message
+            const msg = document.getElementById('messageInput').value.toUpperCase();
+            let squares = '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-top:16px;">';
+            let letterIdx = 1;
+            for (let ch of msg) {
+                if (ch === ' ') {
+                    squares += '<div style="width:24px;"></div>';
+                } else if (/[A-Z]/.test(ch)) {
+                    squares += `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                        <div style="font-size:11px;color:#888;">${letterIdx}</div>
+                        <div style="width:40px;height:40px;border:2px solid #333;border-radius:4px;"></div>
+                    </div>`;
+                    letterIdx++;
+                }
+            }
+            squares += '</div>';
+
+        const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decode the Message</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; text-align: center; }
+        .instructions {
+            background: #f0f7ff;
+            border-left: 4px solid #4CAF50;
+            padding: 14px 18px;
+            border-radius: 0 6px 6px 0;
+            margin: 20px 0;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .encoded-message {
+            background: white;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin-top: 10px;
+            font-size: 16px;
+        }
+        .answer-label {
+            font-weight: bold;
+            font-size: 15px;
+            margin: 28px 0 10px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Decode the Message</h1>
+
+        <div class="instructions">
+            <strong>How to play:</strong> For each set of arrows below, start at the
+            <strong>bottom-left corner</strong> of the table. Follow the arrows step by step
+            to find a letter. Write that letter in the matching numbered square at the bottom.
+            Start back at the bottom-left corner for each new set of arrows.
+            A single vertical line ( | ) separates letters. A double line ( || ) means a space between words.
+        </div>
+
+        ${tableHTML}
+
+        <div style="margin-top: 30px;">
+            <div class="encoded-message">${encodedMessage}</div>
+        </div>
+
+        <div class="answer-label">Write your letters here:</div>
+        ${squares}
+    </div>
+</body>
+</html>
+            `;
+            
+            decodeWindow.document.write(html);
+            decodeWindow.document.close();
+        }
+
+        // Generate initial table
+        generateNewTable();
+    </script>
+</body>
+</html>
