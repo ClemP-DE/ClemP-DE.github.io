@@ -210,23 +210,34 @@
   </div>
 
   <!-- LAUNCH -->
-  <div class="section" id="tool">
-    <span class="section-label">The Tool</span>
-    <h2>Generate a worksheet</h2>
-    <p>
-      Open the tool, type your secret sentence, choose your operations, and click
-      Generate. A printable worksheet opens in a new tab — ready to hand to a child,
-      a student, or anyone who enjoys a puzzle.
-    </p>
-    <a class="launch-btn" href="https://clemp-de.github.io/Scavenger%20Hunt.html" target="_blank">
-      <span class="btn-icon">🔢</span>
-      Open the Worksheet Generator
-    </a>
-  </div>
-
 </div>
 
 <footer>
+  <!-- TOOLS -->
+  <div class="section" id="tools">
+    <span class="section-label">Interactive Tools</span>
+    <h2>Generate a scavenger hunt</h2>
+    <p>
+      Open the tool, type your secret sentence, choose a letter-to-number mapping
+      and which arithmetic operations to use, then click Generate. A worksheet
+      opens in a new tab ready to print.
+    </p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:8px;">
+
+      <a style="display:block;padding:18px 20px;border:1px solid var(--rule);border-radius:4px;background:white;text-decoration:none;color:var(--ink);transition:all 0.18s;position:relative;"
+         href="https://clemp-de.github.io/_good_original_scavenger_hunt_format.html" target="_blank"
+         onmouseover="this.style.borderColor='#2a5b8f';this.style.background='#f0f5fb';this.style.transform='translateY(-2px)'"
+         onmouseout="this.style.borderColor='var(--rule)';this.style.background='white';this.style.transform='none'">
+        <span style="font-family:'Playfair Display',serif;font-size:0.75rem;font-style:italic;color:var(--rule);display:block;margin-bottom:4px;">01</span>
+        <span style="font-weight:400;font-size:0.95rem;display:block;margin-bottom:6px;color:var(--ink);">Scavenger Hunt Generator</span>
+        <span style="font-size:0.78rem;color:var(--ink3);line-height:1.5;display:block;">Encode any sentence as arithmetic problems. Supports addition, subtraction, multiplication, and division with forward, reverse, or random letter mapping.</span>
+        <span style="position:absolute;top:18px;right:18px;font-size:0.8rem;color:var(--rule);">→</span>
+      </a>
+
+    </div>
+  </div>
+
   <a href="index.html">← Back to all explorations</a>
   <a href="https://github.com/ClemP-DE" target="_blank">github.com/ClemP-DE</a>
 </footer>
@@ -237,7 +248,5 @@
   }, {threshold:0.08});
   document.querySelectorAll('.section').forEach(el => obs.observe(el));
 </script>
- <script data-goatcounter="https://clemp.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
