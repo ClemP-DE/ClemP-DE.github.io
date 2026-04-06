@@ -129,12 +129,12 @@
     <span class="hero-tag">Arithmetic</span>
     <h1>Arithmetic <em>Scavenger Hunt</em></h1>
     <p class="lead">
-      Encode a secret message as arithmetic problems. Solve the sums,
-      decode the letters, reveal the hidden sentence. A printable worksheet
-      generator designed to make arithmetic practice genuinely fun.
+      Hide a secret message inside a set of arithmetic problems. Solve the sums,
+      decode the letters, and reveal the hidden sentence. A family of printable
+      worksheet tools designed to make arithmetic practice genuinely fun.
     </p>
   </div>
-  <div class="hero-symbol">A=1</div>
+  <div class="hero-symbol">A=?</div>
 </div>
 
 <div class="page-body">
@@ -144,68 +144,51 @@
     <span class="section-label">How It Works</span>
     <h2>A secret message hiding in plain arithmetic</h2>
     <p>
-      Each letter of the alphabet maps to a number — A=1, B=2, all the way to Z=26,
-      or in reverse (A=26, Z=1) for an extra layer of challenge. Type in any sentence,
-      choose which arithmetic operations to use, and the tool generates a printable
-      worksheet.
+      The idea is simple: each letter in a secret sentence gets converted into
+      an arithmetic problem. Solve the problems, decode the answers back into
+      letters, and the hidden message is revealed. The tools here offer different
+      ways to do that encoding — some map each letter to a single number, others
+      use a coordinate position on a grid — but the principle is the same in
+      every case.
     </p>
     <div class="steps">
       <div class="step">
         <span class="step-num">1</span>
-        <span class="step-text">Type a <strong>secret sentence</strong> into the generator — anything from "Hello" to a full phrase.</span>
+        <span class="step-text">Type a <strong>secret sentence</strong> into whichever tool you choose.</span>
       </div>
       <div class="step">
         <span class="step-num">2</span>
-        <span class="step-text">Choose which <strong>operations</strong> to use: addition, subtraction, multiplication, division, or any combination.</span>
+        <span class="step-text">Choose which <strong>arithmetic operations</strong> to use — addition, subtraction, multiplication, or division.</span>
       </div>
       <div class="step">
         <span class="step-num">3</span>
-        <span class="step-text">The tool generates a <strong>printable worksheet</strong> — one arithmetic problem per letter, each with an answer that maps back to a letter.</span>
+        <span class="step-text">A <strong>printable worksheet</strong> is generated with one or more arithmetic problems per letter.</span>
       </div>
       <div class="step">
         <span class="step-num">4</span>
-        <span class="step-text">Solve the problems, look up each answer in the <strong>mapping table</strong> at the bottom of the sheet, and the secret sentence is revealed.</span>
+        <span class="step-text">Solve the problems, decode the answers back into letters, and <strong>reveal the hidden message</strong>.</span>
       </div>
     </div>
   </div>
 
-  <!-- EXAMPLE -->
-  <div class="section" id="example">
-    <span class="section-label">Example</span>
-    <h2>The letter-to-number mapping</h2>
-    <p>In the forward mapping, each letter corresponds to its position in the alphabet:</p>
-    <div class="mapping">
-      <div class="mapping-cell"><span class="letter">A</span><span class="number">1</span></div>
-      <div class="mapping-cell"><span class="letter">B</span><span class="number">2</span></div>
-      <div class="mapping-cell"><span class="letter">C</span><span class="number">3</span></div>
-      <div class="mapping-cell"><span class="letter">D</span><span class="number">4</span></div>
-      <div class="mapping-cell"><span class="letter">E</span><span class="number">5</span></div>
-      <div class="mapping-cell"><span class="letter">F</span><span class="number">6</span></div>
-      <div class="mapping-cell"><span class="letter">G</span><span class="number">7</span></div>
-      <div class="mapping-cell"><span class="letter">H</span><span class="number">8</span></div>
-      <div class="mapping-cell"><span class="letter">I</span><span class="number">9</span></div>
-      <div class="mapping-cell"><span class="letter">J</span><span class="number">10</span></div>
-      <div class="mapping-cell"><span class="letter">K</span><span class="number">11</span></div>
-      <div class="mapping-cell"><span class="letter">L</span><span class="number">12</span></div>
-      <div class="mapping-cell"><span class="letter">M</span><span class="number">13</span></div>
-      <div class="mapping-cell"><span class="letter">N</span><span class="number">14</span></div>
-      <div class="mapping-cell"><span class="letter">O</span><span class="number">15</span></div>
-      <div class="mapping-cell"><span class="letter">P</span><span class="number">16</span></div>
-      <div class="mapping-cell"><span class="letter">Q</span><span class="number">17</span></div>
-      <div class="mapping-cell"><span class="letter">R</span><span class="number">18</span></div>
-      <div class="mapping-cell"><span class="letter">S</span><span class="number">19</span></div>
-      <div class="mapping-cell"><span class="letter">T</span><span class="number">20</span></div>
-      <div class="mapping-cell"><span class="letter">U</span><span class="number">21</span></div>
-      <div class="mapping-cell"><span class="letter">V</span><span class="number">22</span></div>
-      <div class="mapping-cell"><span class="letter">W</span><span class="number">23</span></div>
-      <div class="mapping-cell"><span class="letter">X</span><span class="number">24</span></div>
-      <div class="mapping-cell"><span class="letter">Y</span><span class="number">25</span></div>
-      <div class="mapping-cell"><span class="letter">Z</span><span class="number">26</span></div>
-    </div>
+  <!-- THE TOOLS -->
+  <div class="section" id="about">
+    <span class="section-label">The Tools</span>
+    <h2>Two ways to hide a message</h2>
     <p>
-      So to encode the word "HI", the tool might generate: 3+5 (=8=H) and 14−5 (=9=I).
-      The worksheet shows only the problems — the solver has to work out the answers
-      and look them up in the table to find the letters.
+      The <strong>Scavenger Hunt Generator</strong> assigns each letter a number —
+      forward (A=1&hellip;Z=26), reverse (A=26&hellip;Z=1), or shuffled randomly.
+      Each letter in the sentence becomes one arithmetic problem whose answer
+      is that letter&rsquo;s number. A key on the worksheet lets the solver look
+      up their answer and find the letter.
+    </p>
+    <p>
+      The <strong>Cartesian Scavenger Hunt</strong> takes a different approach.
+      Letters are placed randomly in a 10&times;10 grid, and each letter&rsquo;s
+      position is given as a coordinate pair (x,&nbsp;y). Each letter in the
+      sentence becomes two arithmetic problems &mdash; one for x, one for y.
+      The solver finds the correct cell in the grid and reads off the letter.
+      Both tools produce a printable worksheet ready to hand to a child.
     </p>
   </div>
 
@@ -216,10 +199,10 @@
   <!-- TOOLS -->
   <div class="section" id="tools">
     <span class="section-label">Interactive Tools</span>
-    <h2>Generate a scavenger hunt</h2>
+    <h2>Choose a tool</h2>
     <p>
-      Open the tool, type your secret sentence, choose a letter-to-number mapping
-      and which arithmetic operations to use, then click Generate. A worksheet
+      Open whichever tool suits the age and skill of your solver, type your secret
+      sentence, choose your arithmetic operations, and click Generate. A worksheet
       opens in a new tab ready to print.
     </p>
 
@@ -232,6 +215,16 @@
         <span style="font-family:'Playfair Display',serif;font-size:0.75rem;font-style:italic;color:var(--rule);display:block;margin-bottom:4px;">01</span>
         <span style="font-weight:400;font-size:0.95rem;display:block;margin-bottom:6px;color:var(--ink);">Scavenger Hunt Generator</span>
         <span style="font-size:0.78rem;color:var(--ink3);line-height:1.5;display:block;">Encode any sentence as arithmetic problems. Supports addition, subtraction, multiplication, and division with forward, reverse, or random letter mapping.</span>
+        <span style="position:absolute;top:18px;right:18px;font-size:0.8rem;color:var(--rule);">→</span>
+      </a>
+
+      <a style="display:block;padding:18px 20px;border:1px solid var(--rule);border-radius:4px;background:white;text-decoration:none;color:var(--ink);transition:all 0.18s;position:relative;"
+         href="https://clemp-de.github.io/cartesian_format.html" target="_blank"
+         onmouseover="this.style.borderColor='#2a5b8f';this.style.background='#f0f5fb';this.style.transform='translateY(-2px)'"
+         onmouseout="this.style.borderColor='var(--rule)';this.style.background='white';this.style.transform='none'">
+        <span style="font-family:'Playfair Display',serif;font-size:0.75rem;font-style:italic;color:var(--rule);display:block;margin-bottom:4px;">02</span>
+        <span style="font-weight:400;font-size:0.95rem;display:block;margin-bottom:6px;color:var(--ink);">Cartesian Scavenger Hunt</span>
+        <span style="font-size:0.78rem;color:var(--ink3);line-height:1.5;display:block;">Encode a sentence as coordinate pairs on a 10×10 letter grid. Solve the arithmetic problems to find the (x, y) position of each letter.</span>
         <span style="position:absolute;top:18px;right:18px;font-size:0.8rem;color:var(--rule);">→</span>
       </a>
 

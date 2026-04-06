@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arithmetic Cryptography Worksheet Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .input-section {
+            margin-bottom: 30px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .table-container {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        table {
+            border-collapse: collapse;
+            margin: 20px auto;
+        }
+        td {
+            border: 1px solid #333;
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .header-cell {
+            background-color: #ddd;
+            font-weight: bold;
+        }
+        .checkbox-group {
+            margin: 15px 0;
+        }
+        .checkbox-group label {
+            display: inline;
+            margin-right: 20px;
+            font-weight: normal;
+        }
+        .controls {
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+        }
+        .control-group {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Arithmetic Cryptography Worksheet Generator</h1>
+        
+        <div class="input-section">
+            <button onclick="generateNewTable()">Generate New Random Table</button>
+            <div class="table-container" id="tableContainer"></div>
+        </div>
+
+        <div class="input-section">
+            <label for="sentenceInput">Sentence to Encode:</label>
+            <input type="text" id="sentenceInput" placeholder="Enter your sentence (e.g., The treasure is under the oak tree)">
+            
+            <div class="checkbox-group">
+                <strong>Problem Types:</strong><br>
+                <label><input type="checkbox" id="additionCheck" checked> Addition</label>
+                <label><input type="checkbox" id="subtractionCheck" checked> Subtraction</label>
+                <label><input type="checkbox" id="multiplicationCheck"> Multiplication</label>
+                <label><input type="checkbox" id="divisionCheck"> Division</label>
+            </div>
+            
+            <div style="margin: 15px 0;">
+                <label for="numOpsInput">Number of operations per problem:</label>
+                <input type="number" id="numOpsInput" value="1" min="1" max="5" style="width: 80px;">
+            </div>
+            
+            <button onclick="generateWorksheet()">Generate Worksheet</button>
+        </div>
+    </div>
+
+    <script>
+        let letterTable = [];
+        let letterPositions = {};
+
+        // Generate a random table with letters A-Z
+        function generateNewTable() {
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+            const cells = [...letters, ...Array(74).fill('')];
+            
+            // Shuffle
+            for (let i = cells.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [cells[i], cells[j]] = [cells[j], cells[i]];
+            }
+            
+            // Create 10x10 table
+            letterTable = [];
+            letterPositions = {};
+            for (let i = 0; i < 10; i++) {
+                letterTable[i] = cells.slice(i * 10, (i + 1) * 10);
+                for (let j = 0; j < 10; j++) {
+                    if (letterTable[i][j]) {
+                        // Row numbering: top row is 10, bottom row is 1
+                        letterPositions[letterTable[i][j]] = {row: 10 - i, col: j + 1};
+                    }
+                }
+            }
+            
+            displayTable();
+        }
+
+        // Display the table
+        function displayTable() {
+            let html = '<table>';
+            
+            // Data rows (reverse numbering so 1 is at bottom)
+            for (let i = 0; i < 10; i++) {
+                html += `<tr><td class="header-cell">${10 - i}</td>`;
+                for (let j = 0; j < 10; j++) {
+                    html += `<td>${letterTable[i][j]}</td>`;
+                }
+                html += '</tr>';
+            }
+            
+            // Footer row with column numbers
+            html += '<tr><td class="header-cell"></td>';
+            for (let i = 1; i <= 10; i++) {
+                html += `<td class="header-cell">${i}</td>`;
+            }
+            html += '</tr>';
+            
+            html += '</table>';
+            document.getElementById('tableContainer').innerHTML = html;
+        }
+
+        // Generate arithmetic problem that equals target
+        function generateProblem(target, useAddition, useSubtraction, useMultiplication, useDivision, numOps) {
+            // Ensure target is within bounds (1-10)
+            if (target < 1 || target > 10) {
+                console.error('Target out of bounds:', target);
+                return target.toString();
+            }
+
+            // Try multiplication first if selected (single-operation, clean result)
+            if (useMultiplication) {
+                const factors = [];
+                for (let i = 1; i <= target; i++) {
+                    if (target % i === 0 && i !== target) factors.push(i);
+                }
+                if (factors.length > 0) {
+                    const a = factors[Math.floor(Math.random() * factors.length)];
+                    const b = target / a;
+                    if (Math.random() < 0.4) return `${a} × ${b}`;
+                }
+            }
+
+            // Try division if selected (single-operation)
+            if (useDivision && Math.random() < 0.4) {
+                const divisor = Math.floor(Math.random() * 9) + 2; // 2-10
+                const dividend = target * divisor;
+                return `${dividend} ÷ ${divisor}`;
+            }
+
+            if (!useAddition && !useSubtraction) {
+                return target.toString();
+            }
+            
+            let operations = [];
+            if (useAddition) operations.push('+');
+            if (useSubtraction) operations.push('-');
+            
+            // Generate exactly numOps operations
+            let additions = [];
+            let subtractions = [];
+            
+            for (let i = 0; i < numOps; i++) {
+                const op = operations[Math.floor(Math.random() * operations.length)];
+                const num = 1 + Math.floor(Math.random() * 5); // 1-5
+                
+                if (op === '+') {
+                    additions.push(num);
+                } else {
+                    subtractions.push(num);
+                }
+            }
+            
+            // Calculate what the starting number should be
+            const additionsSum = additions.reduce((a, b) => a + b, 0);
+            const subtractionsSum = subtractions.reduce((a, b) => a + b, 0);
+            let startNum = target - additionsSum + subtractionsSum;
+            
+            // If startNum would be negative, adjust the operations themselves (not add new ones)
+            while (startNum <= 0) {
+                const needed = Math.abs(startNum) + 1;
+                
+                // Try to reduce a subtraction or increase an addition
+                if (subtractions.length > 0) {
+                    // Reduce the first subtraction
+                    if (subtractions[0] > needed) {
+                        subtractions[0] -= needed;
+                        startNum += needed;
+                    } else {
+                        // Remove this subtraction entirely and recalculate
+                        startNum += subtractions[0];
+                        subtractions.shift();
+                    }
+                } else if (additions.length > 0) {
+                    // Reduce an addition
+                    if (additions[0] > needed) {
+                        additions[0] -= needed;
+                        startNum += needed;
+                    } else {
+                        startNum += additions[0];
+                        additions.shift();
+                    }
+                } else {
+                    // No operations to adjust - just make startNum positive
+                    startNum = target;
+                    break;
+                }
+                
+                // Recalculate startNum
+                const newAddSum = additions.reduce((a, b) => a + b, 0);
+                const newSubSum = subtractions.reduce((a, b) => a + b, 0);
+                startNum = target - newAddSum + newSubSum;
+            }
+            
+            // Build the problem
+            let problem = [startNum.toString()];
+            
+            for (let num of additions) {
+                problem.push(`+ ${num}`);
+            }
+            
+            for (let num of subtractions) {
+                problem.push(`- ${num}`);
+            }
+            
+            return problem.join(' ');
+        }
+
+        // Generate worksheet
+        function generateWorksheet() {
+            const sentence = document.getElementById('sentenceInput').value.toUpperCase();
+            const useAddition = document.getElementById('additionCheck').checked;
+            const useSubtraction = document.getElementById('subtractionCheck').checked;
+            const useMultiplication = document.getElementById('multiplicationCheck').checked;
+            const useDivision = document.getElementById('divisionCheck').checked;
+            const numOps = parseInt(document.getElementById('numOpsInput').value);
+            
+            if (!sentence) {
+                alert('Please enter a sentence');
+                return;
+            }
+            
+            if (!useAddition && !useSubtraction) {
+                alert('Please select at least one problem type');
+                return;
+            }
+            
+            let problems = [];
+            let letterCount = 0;
+            
+            for (let char of sentence) {
+                if (char === ' ') {
+                    problems.push({type: 'space'});
+                    continue;
+                }
+                
+                if (!letterPositions[char]) {
+                    continue; // Skip characters not in table
+                }
+                
+                letterCount++;
+                const pos = letterPositions[char];
+                const xProblem = generateProblem(pos.col, useAddition, useSubtraction, useMultiplication, useDivision, numOps);
+                const yProblem = generateProblem(pos.row, useAddition, useSubtraction, useMultiplication, useDivision, numOps);
+                
+                problems.push({
+                    letter: char,
+                    number: letterCount,
+                    xProblem: xProblem,
+                    yProblem: yProblem,
+                    x: pos.col,
+                    y: pos.row
+                });
+            }
+            
+            generateWorksheetPage(problems, useMultiplication, useDivision);
+        }
+
+        // Generate worksheet page
+        function generateWorksheetPage(problems, useMultiplication, useDivision) {
+            const worksheetWindow = window.open('', '_blank');
+            
+            // Generate table HTML
+            let tableHTML = '<table style="border-collapse: collapse; margin: 20px auto;">';
+            
+            for (let i = 0; i < 10; i++) {
+                tableHTML += `<tr><td style="border: 1px solid #333; width: 40px; height: 40px; text-align: center; background-color: #ddd; font-weight: bold;">${10 - i}</td>`;
+                for (let j = 0; j < 10; j++) {
+                    tableHTML += `<td style="border: 1px solid #333; width: 40px; height: 40px; text-align: center; font-weight: bold; font-size: 16px;">${letterTable[i][j]}</td>`;
+                }
+                tableHTML += '</tr>';
+            }
+            
+            tableHTML += '<tr><td style="border: 1px solid #333; width: 40px; height: 40px; text-align: center; background-color: #ddd; font-weight: bold;"></td>';
+            for (let i = 1; i <= 10; i++) {
+                tableHTML += `<td style="border: 1px solid #333; width: 40px; height: 40px; text-align: center; background-color: #ddd; font-weight: bold;">${i}</td>`;
+            }
+            tableHTML += '</tr></table>';
+            
+            // Generate problems HTML
+            let problemsHTML = '<div style="margin-top: 30px;">';
+            
+            for (let item of problems) {
+                if (item.type === 'space') {
+                    problemsHTML += '<span style="display: inline-block; width: 40px;"></span>';
+                } else {
+                    problemsHTML += `
+                        <div style="display: inline-block; margin: 0 15px 30px 0; vertical-align: top; text-align: center;">
+                            <div style="font-weight: bold; margin-bottom: 5px;">${item.number}.</div>
+                            <div style="margin-bottom: 5px;">${item.xProblem} = ___</div>
+                            <div style="margin-bottom: 5px;">${item.yProblem} = ___</div>
+                            <div style="font-size: 18px;">( ___ , ___ )</div>
+                        </div>
+                    `;
+                }
+            }
+            
+            problemsHTML += '</div>';
+            
+            // Build answer squares — one per letter in the sentence
+            const sentence = document.getElementById('sentenceInput').value.toUpperCase();
+            let answerSquaresHTML = '<div style="margin-top:40px;border-top:2px solid #999;padding-top:20px;">';
+            answerSquaresHTML += '<div style="font-size:16px;font-weight:bold;margin-bottom:16px;">Write your answer here</div>';
+            answerSquaresHTML += '<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">';
+            let letterNum = 1;
+            for (let char of sentence) {
+                if (char === ' ') {
+                    answerSquaresHTML += '<div style="width:24px;"></div>';
+                } else if (/[A-Z]/.test(char)) {
+                    answerSquaresHTML += `
+                        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+                            <div style="font-size:11px;color:#888;">${letterNum}</div>
+                            <div style="width:40px;height:40px;border:2px solid #333;border-radius:4px;"></div>
+                        </div>`;
+                    letterNum++;
+                }
+            }
+            answerSquaresHTML += '</div></div>';
+            const keyTableHTML = answerSquaresHTML;
+
+            const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryptography Worksheet</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .instructions {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Decode the Message</h1>
+    <div class="instructions">
+        <strong>Instructions:</strong> Solve each pair of arithmetic problems. The answers give you coordinates (x, y) in the table. 
+        Find that location in the table to discover each letter. Write the letters in order to reveal the hidden message!
+    </div>
+    ${tableHTML}
+    ${problemsHTML}
+    ${keyTableHTML}
+</body>
+</html>
+            `;
+            
+            worksheetWindow.document.write(html);
+            worksheetWindow.document.close();
+        }
+
+        // Generate initial table
+        generateNewTable();
+    </script>
+</body>
+</html>
