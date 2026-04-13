@@ -518,7 +518,7 @@
 <!-- ── FOOTER ── -->
 <footer>
   <span>Clem Padin — Mathematical Explorations</span>
-  <span style="color:var(--ink3);">Get in touch: <a href="/cdn-cgi/l/email-protection#7f3c131a122f321e0b173f18121e1613511c1012"><span class="__cf_email__" data-cfemail="5a19363f370a173b2e321a3d373b333674393537">[email&#160;protected]</span></a></span>
+  <span style="color:var(--ink3);">Get in touch: <a href="/cdn-cgi/l/email-protection#3f7c535a526f725e4b577f58525e5653115c5052"><span class="__cf_email__" data-cfemail="20634c454d706d41544860474d41494c0e434f4d">[email&#160;protected]</span></a></span>
   <a href="https://github.com/ClemP-DE" target="_blank">github.com/ClemP-DE</a>
 </footer>
 
@@ -526,4 +526,13 @@
   // Intersection observer for fade-in on scroll
   const observer = new IntersectionObserver(entries => {
     entries.forEach(e => {
-      if (e.isI
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.project').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
