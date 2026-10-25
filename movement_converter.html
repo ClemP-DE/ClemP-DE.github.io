@@ -1,0 +1,392 @@
+<!doctype html>
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Movement Operator Converter</title>
+<style>
+/* Layout: one column. Input on top, the movement sentence and its trace below, the table last. */
+:root {
+  --bg: #f7f5ef;
+  --panel: #fffdf8;
+  --fg: #1d1c19;
+  --muted: #6b675d;
+  --rule: #d9d4c7;
+  --accent: #1f6f6a;
+  --accent-soft: #d8ebe8;
+  --hit: #f2c14e;
+  --down: #8a3b12;
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161512;
+    --panel: #1f1e1a;
+    --fg: #ece8df;
+    --muted: #a39e91;
+    --rule: #3a3831;
+    --accent: #6cc2b9;
+    --accent-soft: #1f3c3a;
+    --hit: #d9a72e;
+    --down: #e0a27a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161512;
+  --panel: #1f1e1a;
+  --fg: #ece8df;
+  --muted: #a39e91;
+  --rule: #3a3831;
+  --accent: #6cc2b9;
+  --accent-soft: #1f3c3a;
+  --hit: #d9a72e;
+  --down: #e0a27a;
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 760px; margin: 0 auto; padding-block: 28px 48px; }
+h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(26px, 5vw, 34px);
+  line-height: 1.15;
+  margin: 0 0 6px;
+  text-wrap: balance;
+}
+.lede { color: var(--muted); margin: 0 0 22px; max-width: 58ch; }
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 16px;
+  min-width: 0;
+}
+.field-row { display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: flex-end; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 260px; }
+.field.narrow { flex: 0 1 120px; }
+label, .label {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+input[type="text"], input[type="number"] {
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 17px;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 9px 11px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+button.chip {
+  font: inherit;
+  font-size: 13px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+button.copy {
+  font: inherit;
+  font-size: 13px;
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.error { color: var(--down); font-size: 14px; margin: 0; }
+.sentence {
+  font-family: var(--mono);
+  font-size: clamp(18px, 4.2vw, 24px);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  margin: 6px 0 4px;
+}
+.sentence .arrow { color: var(--accent); }
+.sentence .eq { color: var(--muted); }
+.sentence .result { font-weight: 600; }
+.check { font-size: 14px; color: var(--muted); margin: 8px 0 0; }
+.check strong { color: var(--accent); font-weight: 600; }
+.trace-wrap { overflow-x: auto; margin-top: 12px; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); font-size: 14px; }
+th { font-weight: 500; color: var(--muted); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+td.num, th.num { text-align: right; font-family: var(--mono); }
+.op { font-family: var(--mono); color: var(--accent); }
+.op.down { color: var(--down); }
+.grid-wrap { overflow-x: auto; }
+.grid { border-collapse: separate; border-spacing: 3px; font-family: var(--mono); font-size: 13px; width: auto; margin: 0 auto; }
+.grid th { border: 0; padding: 2px 6px; font-family: var(--mono); font-size: 11px; text-align: center; }
+.grid td { border: 0; padding: 0; text-align: center; }
+.grid td .cell {
+  display: inline-block;
+  min-width: 40px;
+  padding: 6px 4px;
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--muted);
+  position: relative;
+}
+.grid td .cell.hit { background: var(--hit); color: #1d1c19; font-weight: 600; }
+.grid td .cell.hit sup { font-size: 9px; margin-left: 2px; }
+.grid td .cell.gap { background: transparent; color: var(--muted); }
+.grid .rowlabel { text-align: right; color: var(--muted); padding-right: 8px; }
+.note { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
+
+<main>
+  <h1>Movement Operator Converter</h1>
+  <p class="lede">Type a sum or difference of whole numbers. The converter breaks each number into rows and columns of the table, then writes the answer as movements from the first number.</p>
+
+  <section class="panel" aria-labelledby="inputs-label">
+    <div class="field-row">
+      <div class="field">
+        <label for="expr" id="inputs-label">Arithmetic</label>
+        <input type="text" id="expr" value="11 + 37 - 16" autocomplete="off" spellcheck="false" inputmode="text">
+      </div>
+      <div class="field narrow">
+        <label for="cols">Columns</label>
+        <input type="number" id="cols" value="10" min="2" max="30" step="1">
+      </div>
+    </div>
+    <div class="examples" role="group" aria-label="Examples">
+      <button type="button" class="chip" data-expr="11 + 37 - 16" data-cols="10">11 + 37 − 16, 10 columns</button>
+      <button type="button" class="chip" data-expr="11 + 18" data-cols="7">11 + 18, 7 columns</button>
+      <button type="button" class="chip" data-expr="7 - 32" data-cols="10">7 − 32, 10 columns</button>
+      <button type="button" class="chip" data-expr="23 - 9" data-cols="7">23 − 9, 7 columns</button>
+    </div>
+  </section>
+
+  <section class="panel" aria-live="polite" aria-labelledby="result-label">
+    <div class="label" id="result-label">Movement</div>
+    <div id="error" class="error" hidden></div>
+    <div id="sentence" class="sentence"></div>
+    <p id="check" class="check"></p>
+    <div style="margin-top:10px"><button type="button" class="copy" id="copy">Copy movement</button></div>
+  </section>
+
+  <section class="panel" aria-labelledby="trace-label">
+    <div class="label" id="trace-label">Step by step</div>
+    <div class="trace-wrap">
+      <table>
+        <thead><tr><th>Move</th><th class="num">Change</th><th class="num">Lands on</th></tr></thead>
+        <tbody id="trace"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="grid-label">
+    <div class="label" id="grid-label">On the table</div>
+    <div class="grid-wrap" id="gridwrap"></div>
+    <p class="note">Highlighted cells are the path. The superscript gives the order of the landing.</p>
+  </section>
+</main>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const floorDiv = (a, b) => Math.floor(a / b);
+  const mod = (a, b) => ((a % b) + b) % b;
+
+  // Accept − and – as minus, × as times; reject anything that is not integers joined by + or -.
+  function parse(raw) {
+    const s = raw.replace(/[−–]/g, "-").replace(/\s+/g, "");
+    if (!/^-?\d+([+-]\d+)*$/.test(s)) {
+      return { error: "Use whole numbers joined by + and −, for example 11 + 37 − 16." };
+    }
+    return { terms: s.match(/[+-]?\d+/g) };
+  }
+
+  // Each operand of magnitude m is split as m = q·c + r with 0 ≤ r < c.
+  // Addition uses ↓ for q rows and → for r columns; subtraction uses ↑ and ←.
+  function convert(terms, c) {
+    const start = parseInt(terms[0], 10);
+    const groups = [];
+    let value = start;
+    const steps = [{ move: "start", change: null, lands: start }];
+    let order = 0;
+    const path = [start];
+
+    for (let i = 1; i < terms.length; i++) {
+      const t = terms[i];
+      const subtract = t[0] === "-";
+      const mag = Math.abs(parseInt(t, 10));
+      const sign = subtract ? -1 : 1;
+      const q = Math.floor(mag / c);
+      const r = mag % c;
+      const down = subtract ? "↑" : "↓";
+      const right = subtract ? "←" : "→";
+      const moves = [];
+      if (q) moves.push({ op: down, n: q, delta: sign * q * c });
+      if (r) moves.push({ op: right, n: r, delta: sign * r });
+      for (const m of moves) {
+        value += m.delta;
+        path.push(value);
+        steps.push({ move: m.op + m.n, change: m.delta, lands: value });
+      }
+      groups.push({ term: (subtract ? "−" : "+") + mag, q, r, moves });
+    }
+
+    const direct = terms.reduce((acc, t, i) => acc + parseInt(t, 10), 0);
+    return { start, groups, steps, path, result: value, direct };
+  }
+
+  function sentenceHTML(conv) {
+    const parts = [String(conv.start)];
+    for (const g of conv.groups) {
+      if (!g.moves.length) continue;
+      for (const m of g.moves) {
+        parts.push('<span class="arrow">' + m.op + "</span>" + m.n);
+      }
+    }
+    return parts.join(" ") + ' <span class="eq">=</span> <span class="result">' + conv.result + "</span>";
+  }
+
+  function groupLine(conv) {
+    return conv.groups.map((g) => {
+      if (!g.moves.length) return g.term + " (no move)";
+      return g.term + " = " + g.moves.map((m) => m.op + m.n).join(" ");
+    }).join("   ·   ");
+  }
+
+  function renderTrace(conv) {
+    const tb = $("trace");
+    tb.innerHTML = "";
+    conv.steps.forEach((s) => {
+      const tr = document.createElement("tr");
+      const tdMove = document.createElement("td");
+      const tdChange = document.createElement("td");
+      const tdLands = document.createElement("td");
+      tdChange.className = "num";
+      tdLands.className = "num";
+      if (s.move === "start") {
+        tdMove.textContent = "Start";
+        tdChange.textContent = "";
+      } else {
+        const op = document.createElement("span");
+        op.className = "op" + (s.move[0] === "↑" || s.move[0] === "←" ? " down" : "");
+        op.textContent = s.move;
+        tdMove.appendChild(op);
+        tdChange.textContent = (s.change > 0 ? "+" : "") + s.change;
+      }
+      tdLands.textContent = s.lands;
+      tr.append(tdMove, tdChange, tdLands);
+      tb.appendChild(tr);
+    });
+  }
+
+  function renderGrid(conv, c) {
+    const wrap = $("gridwrap");
+    const visitedRows = new Set(conv.path.map((v) => floorDiv(v, c)));
+    const minRow = Math.min(...visitedRows);
+    const maxRow = Math.max(...visitedRows);
+    let rows = [];
+    if (maxRow - minRow + 1 <= 24) {
+      for (let r = minRow - 1; r <= maxRow + 1; r++) rows.push(r);
+    } else {
+      rows = [...visitedRows].sort((a, b) => a - b);
+    }
+    const order = new Map();
+    conv.path.forEach((v, i) => { if (!order.has(v)) order.set(v, i); });
+
+    let html = '<table class="grid"><caption class="sr">Table with the path highlighted</caption><thead><tr><th></th>';
+    for (let col = 0; col < c; col++) html += "<th>" + col + "</th>";
+    html += "</tr></thead><tbody>";
+    let prev = null;
+    for (const r of rows) {
+      if (prev !== null && r !== prev + 1) {
+        html += '<tr><td class="rowlabel">…</td>' + "<td colspan=\"" + c + "\" class=\"cell gap\"></td></tr>";
+      }
+      html += '<tr><th class="rowlabel" scope="row">' + (r * c) + "</th>";
+      for (let col = 0; col < c; col++) {
+        const v = r * c + col;
+        if (order.has(v)) {
+          const sup = conv.path.length > 1 ? "<sup>" + (order.get(v) + 1) + "</sup>" : "";
+          html += '<td><span class="cell hit">' + v + sup + "</span></td>";
+        } else {
+          html += '<td><span class="cell">' + v + "</span></td>";
+        }
+      }
+      html += "</tr>";
+      prev = r;
+    }
+    html += "</tbody></table>";
+    wrap.innerHTML = html;
+  }
+
+  function showError(msg) {
+    $("error").hidden = false;
+    $("error").textContent = msg;
+    $("sentence").innerHTML = "";
+    $("check").textContent = "";
+    $("trace").innerHTML = "";
+    $("gridwrap").innerHTML = "";
+  }
+
+  let lastText = "";
+
+  function render() {
+    const c = parseInt($("cols").value, 10);
+    if (!Number.isInteger(c) || c < 2 || c > 30) {
+      showError("Columns must be a whole number from 2 to 30.");
+      return;
+    }
+    const p = parse($("expr").value);
+    if (p.error) { showError(p.error); return; }
+
+    $("error").hidden = true;
+    const conv = convert(p.terms, c);
+    $("sentence").innerHTML = sentenceHTML(conv);
+    const ok = conv.result === conv.direct;
+    $("check").innerHTML = ok
+      ? '<strong>✓</strong> Matches the direct sum: ' + conv.direct + "."
+      : "Mismatch: the movements give " + conv.result + " but the direct sum is " + conv.direct + ".";
+    lastText = conv.groups.length ? conv.start + " " + conv.groups.map((g) => g.moves.map((m) => m.op + m.n).join(" ")).join(" ") + " = " + conv.result : String(conv.start);
+    lastText = conv.start + " " + conv.steps.slice(1).map((s) => s.move).join(" ") + " = " + conv.result;
+    renderTrace(conv);
+    renderGrid(conv, c);
+  }
+
+  $("expr").addEventListener("input", render);
+  $("cols").addEventListener("input", render);
+  document.querySelectorAll("button.chip").forEach((b) => {
+    b.addEventListener("click", () => {
+      $("expr").value = b.dataset.expr;
+      $("cols").value = b.dataset.cols;
+      render();
+    });
+  });
+  $("copy").addEventListener("click", () => {
+    const text = lastText;
+    const done = () => { $("copy").textContent = "Copied"; setTimeout(() => ($("copy").textContent = "Copy movement"), 1500); };
+    try {
+      navigator.clipboard.writeText(text).then(done, () => {});
+    } catch (e) { /* clipboard unavailable */ }
+  });
+
+  render();
+})();
+</script>
