@@ -12,6 +12,8 @@
   --accent: #1f6f6a;
   --accent-soft: #d8ebe8;
   --hit: #f2c14e;
+  --start: #b9e3c0;
+  --end: #e98a80;
   --down: #8a3b12;
   --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -151,6 +153,8 @@ td.num, th.num { text-align: right; font-family: var(--mono); }
 }
 .grid td .cell.hit { background: var(--hit); color: #1d1c19; font-weight: 600; }
 .grid td .cell.hit sup { font-size: 9px; margin-left: 2px; }
+.grid td .cell.hit.start { background: var(--start); color: #1d1c19; }
+.grid td .cell.hit.end { background: var(--end); color: #1d1c19; }
 .grid td .cell.gap { background: transparent; color: var(--muted); }
 .grid .rowlabel { text-align: right; color: var(--muted); padding-right: 8px; }
 .note { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
@@ -201,7 +205,7 @@ td.num, th.num { text-align: right; font-family: var(--mono); }
   <section class="panel" aria-labelledby="grid-label">
     <div class="label" id="grid-label">On the table</div>
     <div class="grid-wrap" id="gridwrap"></div>
-    <p class="note">Highlighted cells are the path. The superscript gives the order of the landing.</p>
+    <p class="note">Every cell visited is highlighted, including the ones crossed between landings. The superscript gives the step number of each visit. Green is the starting number, red is the result.</p>
   </section>
 </main>
 
@@ -243,8 +247,13 @@ td.num, th.num { text-align: right; font-family: var(--mono); }
       if (q) moves.push({ op: down, n: q, delta: sign * q * c });
       if (r) moves.push({ op: right, n: r, delta: sign * r });
       for (const m of moves) {
-        value += m.delta;
-        path.push(value);
+        // Every cell crossed counts as a visit: a move of n rows passes n cells,
+        // a move of n columns passes n cells, and each one is recorded.
+        const unit = m.op === "↓" || m.op === "↑" ? sign * c : sign;
+        for (let k = 0; k < m.n; k++) {
+          value += unit;
+          path.push(value);
+        }
         steps.push({ move: m.op + m.n, change: m.delta, lands: value });
       }
       groups.push({ term: (subtract ? "−" : "+") + mag, q, r, moves });
@@ -309,8 +318,11 @@ td.num, th.num { text-align: right; font-family: var(--mono); }
     } else {
       rows = [...visitedRows].sort((a, b) => a - b);
     }
-    const order = new Map();
-    conv.path.forEach((v, i) => { if (!order.has(v)) order.set(v, i); });
+    const visits = new Map();
+    conv.path.forEach((v, i) => {
+      if (!visits.has(v)) visits.set(v, []);
+      visits.get(v).push(i + 1);
+    });
 
     let html = '<table class="grid"><caption class="sr">Table with the path highlighted</caption><thead><tr><th></th>';
     for (let col = 0; col < c; col++) html += "<th>" + col + "</th>";
@@ -323,9 +335,10 @@ td.num, th.num { text-align: right; font-family: var(--mono); }
       html += '<tr><th class="rowlabel" scope="row">' + (r * c) + "</th>";
       for (let col = 0; col < c; col++) {
         const v = r * c + col;
-        if (order.has(v)) {
-          const sup = conv.path.length > 1 ? "<sup>" + (order.get(v) + 1) + "</sup>" : "";
-          html += '<td><span class="cell hit">' + v + sup + "</span></td>";
+        if (visits.has(v)) {
+          const sup = "<sup>" + visits.get(v).join(",") + "</sup>";
+          const extra = v === conv.result ? " end" : v === conv.start ? " start" : "";
+          html += '<td><span class="cell hit' + extra + '">' + v + sup + "</span></td>";
         } else {
           html += '<td><span class="cell">' + v + "</span></td>";
         }
