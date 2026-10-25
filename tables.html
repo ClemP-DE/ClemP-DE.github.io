@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ClemP — Adventures with Number Tables</title>
+<title>ClemP — Adventures with Number Line tables</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <style>
@@ -173,7 +173,7 @@
 <div class="hero">
   <div>
     <span class="hero-tag">Number Theory</span>
-    <h1>Adventures with <em>Number Tables</em></h1>
+    <h1>Adventures with <em>Number Line tables</em></h1>
     <p class="lead">
       A grandson's arithmetic question, a dream, and a diagonal. When sequential
       numbers collected from the number line are arranged into a table, something
@@ -209,7 +209,7 @@
   <!-- PAPER -->
   <div class="section" id="paper">
     <span class="section-label">The Paper</span>
-    <h2>Adventures with Number Tables</h2>
+    <h2>Adventures with Number Line tables</h2>
     <p>
       An exploration that begins with a 6-year-old's division question and travels
       through number-line tables, sub-tables of any width, negative integers, and
@@ -220,11 +220,25 @@
     <a class="paper-card" href="#" onclick="event.preventDefault();alert('This paper has been submitted for publication and is not available here while under review. It will be linked once published.')">
       <span class="paper-icon">📄</span>
       <div class="paper-info">
-        <span class="paper-title">Adventures with Number Tables</span>
+        <span class="paper-title">Adventures with Number Line tables</span>
         <span class="paper-meta">Clem Padin · Chalkdust Magazine</span>
         <span class="paper-status">Submitted — Under Review</span>
       </div>
     </a>
+  </div>
+
+  <!-- CONVERTER -->
+  <div class="section" id="converter">
+    <span class="section-label">Try It</span>
+    <h2>Movement Operator Converter</h2>
+    <p>
+      Type a sum or difference and choose a column count. The converter writes the
+      answer as movements through the table, shows each landing, and marks the path
+      on the grid.
+    </p>
+    <iframe src="movement_converter.html" title="Movement Operator Converter"
+            loading="lazy" style="width:100%;max-width:760px;height:900px;border:1px solid var(--rule);border-radius:4px;background:var(--bg);"></iframe>
+    <p style="margin-top:12px;"><a href="movement_converter.html" target="_blank" rel="noopener" style="color:var(--accent);">Open the converter in its own page</a></p>
   </div>
 
 </div>
