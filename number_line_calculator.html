@@ -1,4 +1,5 @@
 <!doctype html>
+<meta charset="utf-8">
 <meta name="claude:viewport-fit-sides" content="cover">
 <title>Number Line Calculator</title>
 <style>
@@ -157,6 +158,39 @@ td.num, th.num { text-align: right; font-family: var(--mono); }
 .grid td .cell.hit.end { background: var(--end); color: #1d1c19; }
 .grid td .cell.gap { background: transparent; color: var(--muted); }
 .grid .rowlabel { text-align: right; color: var(--muted); padding-right: 8px; }
+.grid td.spacer { width: 18px; min-width: 18px; }
+.grid.compact td .cell { min-width: 30px; padding: 5px 2px; font-size: 12px; }
+.seg-head { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); margin: 18px 0 2px; }
+.seg-head:first-child { margin-top: 6px; }
+.grid th.blocklabel { color: var(--accent); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; padding-bottom: 0; }
+tr.group td { color: var(--accent); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; padding-top: 14px; }
+details.panel > summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+details.panel > summary::-webkit-details-marker { display: none; }
+details.panel > summary::before {
+  content: "";
+  width: 0; height: 0;
+  border-left: 6px solid var(--accent);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  transition: transform 0.15s;
+}
+details.panel[open] > summary::before { transform: rotate(90deg); }
+details.panel > summary .hint { text-transform: none; letter-spacing: 0; color: var(--muted); opacity: 0.8; }
+details.panel[open] > summary { margin-bottom: 8px; }
+@media (prefers-reduced-motion: reduce) { details.panel > summary::before { transition: none; } }
+.summary-lines { font-family: var(--mono); font-size: clamp(14px, 3.4vw, 16px); line-height: 1.6; margin: 6px 0 12px; overflow-wrap: anywhere; }
+.summary-lines .moved { font-family: var(--sans); font-size: 13px; color: var(--muted); }
+.moved-note { font-size: 13px; color: var(--muted); margin: 2px 0 6px; }
 .note { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .decomp { display: grid; gap: 10px; margin-top: 8px; }
@@ -174,7 +208,7 @@ td.num, th.num { text-align: right; font-family: var(--mono); }
 </style>
 <main>
   <h1>Number Line Calculator</h1>
-  <p class="lede">Type a sum or difference of whole numbers. Each number after the first is broken into rows and columns of the table, and the answer is found by moving through the table from the first number.</p>
+  <p class="lede">Type a sum or difference of whole numbers. Each number after the first is broken into rows and columns of the table, and the answer is found by moving through the table from the first number. Separate calculations with commas to draw letters next to each other, one blank column apart.</p>
 
   <section class="panel" aria-labelledby="inputs-label">
     <div class="field-row">
@@ -184,7 +218,7 @@ td.num, th.num { text-align: right; font-family: var(--mono); }
       </div>
       <div class="field narrow">
         <label for="cols">Columns</label>
-        <input type="number" id="cols" value="10" min="2" max="30" step="1">
+        <input type="number" id="cols" value="7" min="2" max="30" step="1">
       </div>
     </div>
     <div class="examples" role="group" aria-label="Examples">
@@ -192,47 +226,57 @@ td.num, th.num { text-align: right; font-family: var(--mono); }
       <button type="button" class="chip" data-expr="11 + 37 - 16" data-cols="7">11 + 37 − 16, 7 columns</button>
       <button type="button" class="chip" data-expr="30 - 13" data-cols="7">30 − 13, 7 columns</button>
       <button type="button" class="chip" data-expr="13 - 44" data-cols="8">13 − 44, 8 columns</button>
+      <button type="button" class="chip" data-expr="0 + 14 - 7 + 2 - 7 + 14, 0 + 2 - 1 + 14 - 1 + 2" data-cols="7">Letters H I, 7 columns</button>
     </div>
   </section>
 
-  <section class="panel" aria-live="polite" aria-labelledby="decomp-label">
-    <div class="label" id="decomp-label">Decomposition</div>
+  <section class="panel" aria-live="polite" aria-labelledby="grid-label">
+    <div class="label" id="grid-label">On the table</div>
     <div id="error" class="error" hidden></div>
-    <div id="decomp" class="decomp"></div>
-    <p id="rewrite" class="rewrite"></p>
-    <p id="check" class="check"></p>
-    <div style="margin-top:10px"><button type="button" class="copy" id="copy">Copy decomposition</button></div>
+    <div id="summary" class="summary-lines"></div>
+    <div class="grid-wrap" id="gridwrap"></div>
+    <p class="note">Every cell visited is highlighted, including the ones crossed between landings. The superscript gives the order of each visit. Green is the starting number, red is the result. Letters sit one blank column apart; when the next letter will not fit in the columns left, it goes on a new copy of the table to the right.</p>
   </section>
 
-  <section class="panel" aria-labelledby="trace-label">
-    <div class="label" id="trace-label">Step by step</div>
+  <details class="panel" id="decomp-panel">
+    <summary>Decomposition <span class="hint">· how each number becomes rows and columns</span></summary>
+    <div id="decomp"></div>
+    <div style="margin-top:10px"><button type="button" class="copy" id="copy">Copy decomposition</button></div>
+  </details>
+
+  <details class="panel" id="trace-panel">
+    <summary>Step by step <span class="hint">· every move and where it lands</span></summary>
     <div class="trace-wrap">
       <table>
         <thead><tr><th>Step</th><th>Movement</th><th class="num">Change</th><th class="num">Lands on</th></tr></thead>
         <tbody id="trace"></tbody>
       </table>
     </div>
-  </section>
-
-  <section class="panel" aria-labelledby="grid-label">
-    <div class="label" id="grid-label">On the table</div>
-    <div class="grid-wrap" id="gridwrap"></div>
-    <p class="note">Every cell visited is highlighted, including the ones crossed between landings. The superscript gives the order of each visit. Green is the starting number, red is the result.</p>
-  </section>
+  </details>
 </main>
 
 <script>
 (function () {
   const $ = (id) => document.getElementById(id);
   const floorDiv = (a, b) => Math.floor(a / b);
+  const mod = (a, b) => ((a % b) + b) % b;
   const plural = (n, word) => n + " " + word + (n === 1 ? "" : "s");
+  const esc = (t) => String(t).replace(/[&<>"]/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
 
+  // Commas separate calculations. Each one is whole numbers joined by + and −.
   function parse(raw) {
-    const s = raw.replace(/[−–]/g, "-").replace(/\s+/g, "");
-    if (!/^-?\d+([+-]\d+)*$/.test(s)) {
-      return { error: "Use whole numbers joined by + and −, for example 11 + 37 − 16." };
+    const pieces = raw.split(",").map((x) => x.replace(/[−–]/g, "-").replace(/\s+/g, ""));
+    if (pieces.length > 1 && pieces[pieces.length - 1] === "") pieces.pop(); // trailing comma while typing
+    const segs = [];
+    for (let i = 0; i < pieces.length; i++) {
+      const s = pieces[i];
+      if (!/^-?\d+([+-]\d+)*$/.test(s)) {
+        const where = pieces.length > 1 ? "Calculation " + (i + 1) + ": " : "";
+        return { error: where + "use whole numbers joined by + and −, for example 11 + 37 − 16. Separate calculations with commas." };
+      }
+      segs.push(s.match(/[+-]?\d+/g));
     }
-    return { terms: s.match(/[+-]?\d+/g) };
+    return { segs };
   }
 
   // Each number after the first, of size m, is split as m = r·c + k with 0 ≤ k < c.
@@ -250,42 +294,19 @@ td.num, th.num { text-align: right; font-family: var(--mono); }
       const r = Math.floor(m / c);
       const k = m % c;
       const moves = [];
-      if (r) moves.push({ kind: "row", n: r, text: "Move " + (subtract ? "up " : "down ") + plural(r, "row"), delta: sign * r * c, unit: sign * c });
-      if (k) moves.push({ kind: "col", n: k, text: "Move " + (subtract ? "left " : "right ") + plural(k, "column"), delta: sign * k, unit: sign });
+      if (r) moves.push({ n: r, text: "Move " + (subtract ? "up " : "down ") + plural(r, "row"), delta: sign * r * c, unit: sign * c });
+      if (k) moves.push({ n: k, text: "Move " + (subtract ? "left " : "right ") + plural(k, "column"), delta: sign * k, unit: sign });
       for (const mv of moves) {
         for (let j = 0; j < mv.n; j++) { value += mv.unit; path.push(value); }
         steps.push({ term: (subtract ? "−" : "+") + m, text: mv.text, back: subtract, delta: mv.delta, lands: value });
       }
-      parts.push({ subtract, m, r, k, moves });
+      parts.push({ subtract, m, r, k });
     }
     const direct = terms.reduce((acc, t) => acc + parseInt(t, 10), 0);
     return { start, parts, steps, path, result: value, direct };
   }
 
   const fmtDecomp = (p, c) => p.r + "·" + c + " + " + p.k;
-
-  function renderDecomp(sol, c) {
-    const box = $("decomp");
-    box.innerHTML = "";
-    const startRow = document.createElement("div");
-    startRow.className = "decomp-row";
-    startRow.innerHTML = '<span class="term">' + sol.start + '</span><span class="means">Starting number. We begin here, so it is not decomposed.</span>';
-    box.appendChild(startRow);
-    for (const p of sol.parts) {
-      const row = document.createElement("div");
-      row.className = "decomp-row";
-      const dirRow = p.subtract ? "up" : "down";
-      const dirCol = p.subtract ? "left" : "right";
-      const means = [];
-      if (p.r) means.push(dirRow + " " + plural(p.r, "row"));
-      if (p.k) means.push(dirCol + " " + plural(p.k, "column"));
-      row.innerHTML =
-        '<span class="term">' + (p.subtract ? "−" : "+") + p.m + "</span>" +
-        '<span class="eqn">' + p.m + " = " + fmtDecomp(p, c) + "</span>" +
-        '<span class="means">' + (means.length ? "Move " + means.join(", then ") + "." : "No movement.") + "</span>";
-      box.appendChild(row);
-    }
-  }
 
   function rewriteText(sol, c, html) {
     let s = String(sol.start);
@@ -297,75 +318,155 @@ td.num, th.num { text-align: right; font-family: var(--mono); }
     return s + " = " + (html ? '<span class="result">' + sol.result + "</span>" : sol.result);
   }
 
-  function renderTrace(sol) {
-    const tb = $("trace");
-    tb.innerHTML = "";
-    const add = (cells) => {
-      const tr = document.createElement("tr");
-      cells.forEach(([content, cls, isHTML]) => {
-        const td = document.createElement("td");
-        if (cls) td.className = cls;
-        if (isHTML) td.innerHTML = content; else td.textContent = content;
-        tr.appendChild(td);
-      });
-      tb.appendChild(tr);
-    };
-    add([["Start", ""], ["Begin at " + sol.start, ""], ["", "num"], [String(sol.start), "num"]]);
-    sol.steps.forEach((s, i) => {
-      add([
-        [String(i + 1), ""],
-        ['<span class="dir ' + (s.back ? "back" : "fwd") + '">' + s.text + "</span> <span class=\"means\">(from " + s.term + ")</span>", "", true],
-        [(s.delta > 0 ? "+" : "−") + Math.abs(s.delta), "num"],
-        [String(s.lands), "num"]
-      ]);
-    });
+  function decompHTML(sol, c) {
+    let h = '<div class="decomp"><div class="decomp-row"><span class="term">' + sol.start +
+      '</span><span class="means">Starting number. We begin here, so it is not decomposed.</span></div>';
+    for (const p of sol.parts) {
+      const means = [];
+      if (p.r) means.push((p.subtract ? "up " : "down ") + plural(p.r, "row"));
+      if (p.k) means.push((p.subtract ? "left " : "right ") + plural(p.k, "column"));
+      h += '<div class="decomp-row"><span class="term">' + (p.subtract ? "−" : "+") + p.m + "</span>" +
+        '<span class="eqn">' + p.m + " = " + fmtDecomp(p, c) + "</span>" +
+        '<span class="means">' + (means.length ? "Move " + means.join(", then ") + "." : "No movement.") + "</span></div>";
+    }
+    h += "</div>";
+    if (sol.parts.length) h += '<p class="rewrite">' + rewriteText(sol, c, true) + "</p>";
+    h += '<p class="check">' + (sol.result === sol.direct
+      ? "<strong>✓</strong> Matches the direct calculation: " + sol.direct + "."
+      : "Mismatch: the movements give " + sol.result + " but the direct calculation is " + sol.direct + ".") + "</p>";
+    return h;
   }
 
-  function renderGrid(sol, c) {
-    const wrap = $("gridwrap");
-    const visitedRows = new Set(sol.path.map((v) => floorDiv(v, c)));
-    const minRow = Math.min(...visitedRows);
-    const maxRow = Math.max(...visitedRows);
+  const movedNote = (sol) => sol.movedFrom === undefined ? "" :
+    "Moved to start at " + sol.start + " (typed as " + sol.movedFrom + ") so it sits one blank column after the previous letter.";
+
+  function renderDecomp(sols, c) {
+    const multi = sols.length > 1;
+    $("decomp").innerHTML = sols.map((sol, i) =>
+      (multi ? '<div class="seg-head">Calculation ' + (i + 1) + "</div>" : "") +
+      (sol.movedFrom !== undefined ? '<p class="moved-note">' + movedNote(sol) + "</p>" : "") +
+      decompHTML(sol, c)).join("");
+  }
+
+  function renderSummary(sols) {
+    $("summary").innerHTML = sols.map((sol) => {
+      const line = sol.start + sol.parts.map((p) => (p.subtract ? " − " : " + ") + p.m).join("") + " = <strong>" + sol.result + "</strong>";
+      return "<div>" + line + (sol.movedFrom !== undefined ? ' <span class="moved">(moved from ' + sol.movedFrom + ")</span>" : "") + "</div>";
+    }).join("");
+  }
+
+  // Lay letters out left to right: one blank column between letters, and a new
+  // copy of the table when the next letter will not fit in the columns left.
+  // A letter is moved sideways by changing its starting number, so the numbers
+  // on the table always match the calculation shown.
+  function layout(segs, c) {
+    const sols = [];
+    let copy = 0;
+    let cursor = 0;
+    segs.forEach((terms, i) => {
+      let sol = solve(terms, c);
+      const path = sol.path;
+      const wraps = path.some((v, j) => j > 0 && Math.abs(v - path[j - 1]) === 1 && floorDiv(v, c) !== floorDiv(path[j - 1], c));
+      const cols = path.map((v) => mod(v, c));
+      const minC = Math.min(...cols);
+      const maxC = Math.max(...cols);
+      const width = maxC - minC + 1;
+      if (i === 0) {
+        cursor = wraps ? c : maxC + 2;
+      } else if (wraps) {
+        copy++;
+        cursor = c;
+      } else {
+        if (cursor + width > c) { copy++; cursor = 0; }
+        const shift = cursor - minC;
+        if (shift !== 0) {
+          const typed = sol.start;
+          sol = solve([String(typed + shift)].concat(terms.slice(1)), c);
+          sol.movedFrom = typed;
+        }
+        cursor += width + 1;
+      }
+      sol.copy = copy;
+      sols.push(sol);
+    });
+    return { sols, copies: copy + 1 };
+  }
+
+  function renderTrace(sols) {
+    const multi = sols.length > 1;
+    let h = "";
+    sols.forEach((sol, si) => {
+      if (multi) h += '<tr class="group"><td colspan="4">Calculation ' + (si + 1) + "</td></tr>";
+      h += "<tr><td>Start</td><td>Begin at " + sol.start + '</td><td class="num"></td><td class="num">' + sol.start + "</td></tr>";
+      sol.steps.forEach((s, i) => {
+        h += "<tr><td>" + (i + 1) + '</td><td><span class="dir ' + (s.back ? "back" : "fwd") + '">' + esc(s.text) +
+          '</span> <span class="means">(from ' + s.term + ')</span></td><td class="num">' + (s.delta > 0 ? "+" : "−") + Math.abs(s.delta) +
+          '</td><td class="num">' + s.lands + "</td></tr>";
+      });
+    });
+    $("trace").innerHTML = h;
+  }
+
+  function renderGrid(sols, copies, c) {
+    const allRows = new Set();
+    sols.forEach((sol) => sol.path.forEach((v) => allRows.add(floorDiv(v, c))));
+    const minRow = Math.min(...allRows);
+    const maxRow = Math.max(...allRows);
     let rows = [];
     if (maxRow - minRow + 1 <= 24) {
       for (let r = minRow - 1; r <= maxRow + 1; r++) rows.push(r);
     } else {
-      rows = [...visitedRows].sort((a, b) => a - b);
+      rows = [...allRows].sort((a, b) => a - b);
     }
-    const visits = new Map();
-    sol.path.forEach((v, i) => {
-      if (!visits.has(v)) visits.set(v, []);
-      visits.get(v).push(i + 1);
+    // For each copy of the table, which letter visited each cell, and in what order.
+    const cellMaps = [];
+    for (let k = 0; k < copies; k++) cellMaps.push(new Map());
+    sols.forEach((sol) => {
+      const m = cellMaps[sol.copy];
+      sol.path.forEach((v, i) => {
+        if (!m.has(v)) m.set(v, { sol, order: [] });
+        const entry = m.get(v);
+        if (entry.sol === sol) entry.order.push(i + 1);
+      });
     });
-    let html = '<table class="grid"><caption class="sr">Table with the path highlighted</caption><thead><tr><th></th>';
-    for (let col = 0; col < c; col++) html += "<th>" + col + "</th>";
+    const compact = copies > 1 || c > 10;
+    let html = '<table class="grid' + (compact ? " compact" : "") + '"><caption class="sr">Table with the paths highlighted</caption><thead><tr><th></th>';
+    for (let k = 0; k < copies; k++) {
+      if (k) html += '<th class="spacer"></th>';
+      for (let col = 0; col < c; col++) html += "<th>" + col + "</th>";
+    }
     html += "</tr></thead><tbody>";
+    const width = copies * c + (copies - 1);
     let prev = null;
     for (const r of rows) {
       if (prev !== null && r !== prev + 1) {
-        html += '<tr><td class="rowlabel">…</td><td colspan="' + c + '" class="cell gap"></td></tr>';
+        html += '<tr><td class="rowlabel">…</td><td colspan="' + width + '" class="cell gap"></td></tr>';
       }
       html += '<tr><th class="rowlabel" scope="row">' + (r * c) + "</th>";
-      for (let col = 0; col < c; col++) {
-        const v = r * c + col;
-        if (visits.has(v)) {
-          const sup = "<sup>" + visits.get(v).join(",") + "</sup>";
-          const extra = v === sol.result ? " end" : v === sol.start ? " start" : "";
-          html += '<td><span class="cell hit' + extra + '">' + v + sup + "</span></td>";
-        } else {
-          html += '<td><span class="cell">' + v + "</span></td>";
+      for (let k = 0; k < copies; k++) {
+        if (k) html += '<td class="spacer"></td>';
+        for (let col = 0; col < c; col++) {
+          const v = r * c + col;
+          const entry = cellMaps[k].get(v);
+          if (entry) {
+            const sol = entry.sol;
+            const extra = v === sol.result ? " end" : v === sol.start ? " start" : "";
+            html += '<td><span class="cell hit' + extra + '">' + v + "<sup>" + entry.order.join(",") + "</sup></span></td>";
+          } else {
+            html += '<td><span class="cell">' + v + "</span></td>";
+          }
         }
       }
       html += "</tr>";
       prev = r;
     }
-    wrap.innerHTML = html + "</tbody></table>";
+    $("gridwrap").innerHTML = html + "</tbody></table>";
   }
 
   function showError(msg) {
     $("error").hidden = false;
     $("error").textContent = msg;
-    ["decomp", "rewrite", "check", "trace", "gridwrap"].forEach((id) => ($(id).innerHTML = ""));
+    ["decomp", "trace", "gridwrap", "summary"].forEach((id) => ($(id).innerHTML = ""));
   }
 
   let lastText = "";
@@ -376,15 +477,12 @@ td.num, th.num { text-align: right; font-family: var(--mono); }
     const p = parse($("expr").value);
     if (p.error) { showError(p.error); return; }
     $("error").hidden = true;
-    const sol = solve(p.terms, c);
-    renderDecomp(sol, c);
-    $("rewrite").innerHTML = sol.parts.length ? rewriteText(sol, c, true) : "";
-    $("check").innerHTML = sol.result === sol.direct
-      ? "<strong>✓</strong> Matches the direct calculation: " + sol.direct + "."
-      : "Mismatch: the movements give " + sol.result + " but the direct calculation is " + sol.direct + ".";
-    lastText = rewriteText(sol, c, false);
-    renderTrace(sol);
-    renderGrid(sol, c);
+    const { sols, copies } = layout(p.segs, c);
+    renderSummary(sols);
+    renderDecomp(sols, c);
+    lastText = sols.map((sol) => rewriteText(sol, c, false)).join(", ");
+    renderTrace(sols);
+    renderGrid(sols, copies, c);
   }
 
   $("expr").addEventListener("input", render);
