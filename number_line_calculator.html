@@ -1,0 +1,406 @@
+<!doctype html>
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Number Line Calculator</title>
+<style>
+/* Layout: one column. Input on top, the movement sentence and its trace below, the table last. */
+:root {
+  --bg: #f7f5ef;
+  --panel: #fffdf8;
+  --fg: #1d1c19;
+  --muted: #6b675d;
+  --rule: #d9d4c7;
+  --accent: #1f6f6a;
+  --accent-soft: #d8ebe8;
+  --hit: #f2c14e;
+  --start: #b9e3c0;
+  --end: #e98a80;
+  --down: #8a3b12;
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161512;
+    --panel: #1f1e1a;
+    --fg: #ece8df;
+    --muted: #a39e91;
+    --rule: #3a3831;
+    --accent: #6cc2b9;
+    --accent-soft: #1f3c3a;
+    --hit: #d9a72e;
+    --down: #e0a27a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161512;
+  --panel: #1f1e1a;
+  --fg: #ece8df;
+  --muted: #a39e91;
+  --rule: #3a3831;
+  --accent: #6cc2b9;
+  --accent-soft: #1f3c3a;
+  --hit: #d9a72e;
+  --down: #e0a27a;
+  color-scheme: dark;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 760px; margin: 0 auto; padding-block: 28px 48px; }
+h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(26px, 5vw, 34px);
+  line-height: 1.15;
+  margin: 0 0 6px;
+  text-wrap: balance;
+}
+.lede { color: var(--muted); margin: 0 0 22px; max-width: 58ch; }
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 16px;
+  min-width: 0;
+}
+.field-row { display: flex; flex-wrap: wrap; gap: 14px 18px; align-items: flex-end; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 260px; }
+.field.narrow { flex: 0 1 120px; }
+label, .label {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+input[type="text"], input[type="number"] {
+  font: inherit;
+  font-family: var(--mono);
+  font-size: 17px;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 9px 11px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+button.chip {
+  font: inherit;
+  font-size: 13px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+button.copy {
+  font: inherit;
+  font-size: 13px;
+  color: var(--fg);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+.error { color: var(--down); font-size: 14px; margin: 0; }
+.sentence {
+  font-family: var(--mono);
+  font-size: clamp(18px, 4.2vw, 24px);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  margin: 6px 0 4px;
+}
+.sentence .arrow { color: var(--accent); }
+.sentence .eq { color: var(--muted); }
+.sentence .result { font-weight: 600; }
+.check { font-size: 14px; color: var(--muted); margin: 8px 0 0; }
+.check strong { color: var(--accent); font-weight: 600; }
+.trace-wrap { overflow-x: auto; margin-top: 12px; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rule); font-size: 14px; }
+th { font-weight: 500; color: var(--muted); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+td.num, th.num { text-align: right; font-family: var(--mono); }
+.op { font-family: var(--mono); color: var(--accent); }
+.op.down { color: var(--down); }
+.grid-wrap { overflow-x: auto; }
+.grid { border-collapse: separate; border-spacing: 3px; font-family: var(--mono); font-size: 13px; width: auto; margin: 0 auto; }
+.grid th { border: 0; padding: 2px 6px; font-family: var(--mono); font-size: 11px; text-align: center; }
+.grid td { border: 0; padding: 0; text-align: center; }
+.grid td .cell {
+  display: inline-block;
+  min-width: 40px;
+  padding: 6px 4px;
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--muted);
+  position: relative;
+}
+.grid td .cell.hit { background: var(--hit); color: #1d1c19; font-weight: 600; }
+.grid td .cell.hit sup { font-size: 9px; margin-left: 2px; }
+.grid td .cell.hit.start { background: var(--start); color: #1d1c19; }
+.grid td .cell.hit.end { background: var(--end); color: #1d1c19; }
+.grid td .cell.gap { background: transparent; color: var(--muted); }
+.grid .rowlabel { text-align: right; color: var(--muted); padding-right: 8px; }
+.note { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.decomp { display: grid; gap: 10px; margin-top: 8px; }
+.decomp-row { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; padding-bottom: 10px; border-bottom: 1px solid var(--rule); min-width: 0; }
+.decomp-row:last-child { border-bottom: 0; padding-bottom: 0; }
+.decomp .term { font-family: var(--mono); font-weight: 600; min-width: 4ch; }
+.decomp .eqn { font-family: var(--mono); font-size: 17px; }
+.decomp .means { color: var(--muted); font-size: 14px; }
+.rewrite { font-family: var(--mono); font-size: clamp(17px, 4vw, 22px); line-height: 1.6; overflow-wrap: anywhere; margin: 14px 0 0; }
+.rewrite .paren { color: var(--accent); }
+.rewrite .result { font-weight: 600; }
+.dir { font-weight: 500; }
+.dir.back { color: var(--down); }
+.dir.fwd { color: var(--accent); }
+</style>
+<main>
+  <h1>Number Line Calculator</h1>
+  <p class="lede">Type a sum or difference of whole numbers. Each number after the first is broken into rows and columns of the table, and the answer is found by moving through the table from the first number.</p>
+
+  <section class="panel" aria-labelledby="inputs-label">
+    <div class="field-row">
+      <div class="field">
+        <label for="expr" id="inputs-label">Arithmetic</label>
+        <input type="text" id="expr" value="11 + 37 - 16" autocomplete="off" spellcheck="false" inputmode="text">
+      </div>
+      <div class="field narrow">
+        <label for="cols">Columns</label>
+        <input type="number" id="cols" value="10" min="2" max="30" step="1">
+      </div>
+    </div>
+    <div class="examples" role="group" aria-label="Examples">
+      <button type="button" class="chip" data-expr="23 + 61" data-cols="10">23 + 61, 10 columns</button>
+      <button type="button" class="chip" data-expr="11 + 37 - 16" data-cols="7">11 + 37 − 16, 7 columns</button>
+      <button type="button" class="chip" data-expr="30 - 13" data-cols="7">30 − 13, 7 columns</button>
+      <button type="button" class="chip" data-expr="13 - 44" data-cols="8">13 − 44, 8 columns</button>
+    </div>
+  </section>
+
+  <section class="panel" aria-live="polite" aria-labelledby="decomp-label">
+    <div class="label" id="decomp-label">Decomposition</div>
+    <div id="error" class="error" hidden></div>
+    <div id="decomp" class="decomp"></div>
+    <p id="rewrite" class="rewrite"></p>
+    <p id="check" class="check"></p>
+    <div style="margin-top:10px"><button type="button" class="copy" id="copy">Copy decomposition</button></div>
+  </section>
+
+  <section class="panel" aria-labelledby="trace-label">
+    <div class="label" id="trace-label">Step by step</div>
+    <div class="trace-wrap">
+      <table>
+        <thead><tr><th>Step</th><th>Movement</th><th class="num">Change</th><th class="num">Lands on</th></tr></thead>
+        <tbody id="trace"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="grid-label">
+    <div class="label" id="grid-label">On the table</div>
+    <div class="grid-wrap" id="gridwrap"></div>
+    <p class="note">Every cell visited is highlighted, including the ones crossed between landings. The superscript gives the order of each visit. Green is the starting number, red is the result.</p>
+  </section>
+</main>
+
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const floorDiv = (a, b) => Math.floor(a / b);
+  const plural = (n, word) => n + " " + word + (n === 1 ? "" : "s");
+
+  function parse(raw) {
+    const s = raw.replace(/[−–]/g, "-").replace(/\s+/g, "");
+    if (!/^-?\d+([+-]\d+)*$/.test(s)) {
+      return { error: "Use whole numbers joined by + and −, for example 11 + 37 − 16." };
+    }
+    return { terms: s.match(/[+-]?\d+/g) };
+  }
+
+  // Each number after the first, of size m, is split as m = r·c + k with 0 ≤ k < c.
+  // Adding moves down r rows and right k columns; subtracting moves up and left.
+  function solve(terms, c) {
+    const start = parseInt(terms[0], 10);
+    let value = start;
+    const parts = [];
+    const steps = [];
+    const path = [start];
+    for (let i = 1; i < terms.length; i++) {
+      const subtract = terms[i][0] === "-";
+      const sign = subtract ? -1 : 1;
+      const m = Math.abs(parseInt(terms[i], 10));
+      const r = Math.floor(m / c);
+      const k = m % c;
+      const moves = [];
+      if (r) moves.push({ kind: "row", n: r, text: "Move " + (subtract ? "up " : "down ") + plural(r, "row"), delta: sign * r * c, unit: sign * c });
+      if (k) moves.push({ kind: "col", n: k, text: "Move " + (subtract ? "left " : "right ") + plural(k, "column"), delta: sign * k, unit: sign });
+      for (const mv of moves) {
+        for (let j = 0; j < mv.n; j++) { value += mv.unit; path.push(value); }
+        steps.push({ term: (subtract ? "−" : "+") + m, text: mv.text, back: subtract, delta: mv.delta, lands: value });
+      }
+      parts.push({ subtract, m, r, k, moves });
+    }
+    const direct = terms.reduce((acc, t) => acc + parseInt(t, 10), 0);
+    return { start, parts, steps, path, result: value, direct };
+  }
+
+  const fmtDecomp = (p, c) => p.r + "·" + c + " + " + p.k;
+
+  function renderDecomp(sol, c) {
+    const box = $("decomp");
+    box.innerHTML = "";
+    const startRow = document.createElement("div");
+    startRow.className = "decomp-row";
+    startRow.innerHTML = '<span class="term">' + sol.start + '</span><span class="means">Starting number. We begin here, so it is not decomposed.</span>';
+    box.appendChild(startRow);
+    for (const p of sol.parts) {
+      const row = document.createElement("div");
+      row.className = "decomp-row";
+      const dirRow = p.subtract ? "up" : "down";
+      const dirCol = p.subtract ? "left" : "right";
+      const means = [];
+      if (p.r) means.push(dirRow + " " + plural(p.r, "row"));
+      if (p.k) means.push(dirCol + " " + plural(p.k, "column"));
+      row.innerHTML =
+        '<span class="term">' + (p.subtract ? "−" : "+") + p.m + "</span>" +
+        '<span class="eqn">' + p.m + " = " + fmtDecomp(p, c) + "</span>" +
+        '<span class="means">' + (means.length ? "Move " + means.join(", then ") + "." : "No movement.") + "</span>";
+      box.appendChild(row);
+    }
+  }
+
+  function rewriteText(sol, c, html) {
+    let s = String(sol.start);
+    for (const p of sol.parts) {
+      const op = p.subtract ? " − " : " + ";
+      const inner = fmtDecomp(p, c);
+      s += op + (html ? '<span class="paren">(</span>' + inner + '<span class="paren">)</span>' : "(" + inner + ")");
+    }
+    return s + " = " + (html ? '<span class="result">' + sol.result + "</span>" : sol.result);
+  }
+
+  function renderTrace(sol) {
+    const tb = $("trace");
+    tb.innerHTML = "";
+    const add = (cells) => {
+      const tr = document.createElement("tr");
+      cells.forEach(([content, cls, isHTML]) => {
+        const td = document.createElement("td");
+        if (cls) td.className = cls;
+        if (isHTML) td.innerHTML = content; else td.textContent = content;
+        tr.appendChild(td);
+      });
+      tb.appendChild(tr);
+    };
+    add([["Start", ""], ["Begin at " + sol.start, ""], ["", "num"], [String(sol.start), "num"]]);
+    sol.steps.forEach((s, i) => {
+      add([
+        [String(i + 1), ""],
+        ['<span class="dir ' + (s.back ? "back" : "fwd") + '">' + s.text + "</span> <span class=\"means\">(from " + s.term + ")</span>", "", true],
+        [(s.delta > 0 ? "+" : "−") + Math.abs(s.delta), "num"],
+        [String(s.lands), "num"]
+      ]);
+    });
+  }
+
+  function renderGrid(sol, c) {
+    const wrap = $("gridwrap");
+    const visitedRows = new Set(sol.path.map((v) => floorDiv(v, c)));
+    const minRow = Math.min(...visitedRows);
+    const maxRow = Math.max(...visitedRows);
+    let rows = [];
+    if (maxRow - minRow + 1 <= 24) {
+      for (let r = minRow - 1; r <= maxRow + 1; r++) rows.push(r);
+    } else {
+      rows = [...visitedRows].sort((a, b) => a - b);
+    }
+    const visits = new Map();
+    sol.path.forEach((v, i) => {
+      if (!visits.has(v)) visits.set(v, []);
+      visits.get(v).push(i + 1);
+    });
+    let html = '<table class="grid"><caption class="sr">Table with the path highlighted</caption><thead><tr><th></th>';
+    for (let col = 0; col < c; col++) html += "<th>" + col + "</th>";
+    html += "</tr></thead><tbody>";
+    let prev = null;
+    for (const r of rows) {
+      if (prev !== null && r !== prev + 1) {
+        html += '<tr><td class="rowlabel">…</td><td colspan="' + c + '" class="cell gap"></td></tr>';
+      }
+      html += '<tr><th class="rowlabel" scope="row">' + (r * c) + "</th>";
+      for (let col = 0; col < c; col++) {
+        const v = r * c + col;
+        if (visits.has(v)) {
+          const sup = "<sup>" + visits.get(v).join(",") + "</sup>";
+          const extra = v === sol.result ? " end" : v === sol.start ? " start" : "";
+          html += '<td><span class="cell hit' + extra + '">' + v + sup + "</span></td>";
+        } else {
+          html += '<td><span class="cell">' + v + "</span></td>";
+        }
+      }
+      html += "</tr>";
+      prev = r;
+    }
+    wrap.innerHTML = html + "</tbody></table>";
+  }
+
+  function showError(msg) {
+    $("error").hidden = false;
+    $("error").textContent = msg;
+    ["decomp", "rewrite", "check", "trace", "gridwrap"].forEach((id) => ($(id).innerHTML = ""));
+  }
+
+  let lastText = "";
+
+  function render() {
+    const c = parseInt($("cols").value, 10);
+    if (!Number.isInteger(c) || c < 2 || c > 30) { showError("Columns must be a whole number from 2 to 30."); return; }
+    const p = parse($("expr").value);
+    if (p.error) { showError(p.error); return; }
+    $("error").hidden = true;
+    const sol = solve(p.terms, c);
+    renderDecomp(sol, c);
+    $("rewrite").innerHTML = sol.parts.length ? rewriteText(sol, c, true) : "";
+    $("check").innerHTML = sol.result === sol.direct
+      ? "<strong>✓</strong> Matches the direct calculation: " + sol.direct + "."
+      : "Mismatch: the movements give " + sol.result + " but the direct calculation is " + sol.direct + ".";
+    lastText = rewriteText(sol, c, false);
+    renderTrace(sol);
+    renderGrid(sol, c);
+  }
+
+  $("expr").addEventListener("input", render);
+  $("cols").addEventListener("input", render);
+  document.querySelectorAll("button.chip").forEach((b) => {
+    b.addEventListener("click", () => {
+      $("expr").value = b.dataset.expr;
+      $("cols").value = b.dataset.cols;
+      render();
+    });
+  });
+  $("copy").addEventListener("click", () => {
+    const done = () => { $("copy").textContent = "Copied"; setTimeout(() => ($("copy").textContent = "Copy decomposition"), 1500); };
+    try { navigator.clipboard.writeText(lastText).then(done, () => {}); } catch (e) { /* clipboard unavailable */ }
+  });
+
+  render();
+})();
+</script>
